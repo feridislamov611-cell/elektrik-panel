@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="az">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Azərişıq və Aztelekom – hesabat paneli</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--text:#1c2330;--muted:#667085;--line:#e4e7ec;--accent:#1f6feb;--up:#c0392b;--down:#1e8e5a}
+@media (prefers-color-scheme:dark){:root{--bg:#12151b;--card:#1b2029;--text:#e8ebf0;--muted:#98a2b3;--line:#2b3240;--accent:#5b9dff;--up:#ff7b6b;--down:#4cc38a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,sans-serif}
+header{padding:20px 16px 0;max-width:1100px;margin:auto}
+h1{font-size:22px;margin:0 0 4px}
+.sub{color:var(--muted);margin:0 0 14px}
+nav{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto}
+nav button{background:none;border:0;padding:10px 14px;color:var(--muted);font:inherit;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+nav button.on{color:var(--accent);border-color:var(--accent);font-weight:600}
+main{max-width:1100px;margin:auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
+.card h2{font-size:16px;margin:0 0 12px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+label{display:flex;flex-direction:column;font-size:13px;color:var(--muted);gap:4px}
+input,select{font:inherit;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--text)}
+button.btn{font:inherit;padding:8px 14px;border-radius:6px;border:0;background:var(--accent);color:#fff;cursor:pointer}
+button.ghost{background:none;color:var(--accent);border:1px solid var(--line)}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:560px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--muted);font-weight:600;font-size:13px}
+.up{color:var(--up)}.down{color:var(--down)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.kpi small{color:var(--muted)}.kpi b{display:block;font-size:20px}
+.muted{color:var(--muted)}
+.x{background:none;border:0;color:var(--muted);cursor:pointer}
+canvas{width:100%;height:220px}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<header>
+  <h1>Hesabat paneli: Azərişıq və Aztelekom</h1>
+  <p class="sub">Aylıq Excel faylları əsasında müqayisə. Məlumat yalnız bu brauzerdə saxlanılır.</p>
+  <nav id="tabs">
+    <button class="on" data-t="elec">1. Elektrik sərfiyyatı</button>
+    <button data-t="next" disabled title="Növbəti bölmə hələ əlavə edilməyib">2. (tezliklə)</button>
+  </nav>
+</header>
+
+<main id="elec">
+  <div class="card">
+    <h2>Aylıq Excel əlavə et</h2>
+    <div class="row">
+      <label>Excel faylı<input type="file" id="file" accept=".xlsx,.xls,.csv"></label>
+      <label>Ay<input type="month" id="month"></label>
+      <label>Tarif (AZN / kVt·saat)<input type="number" id="tariff" step="0.001" min="0" value="0.15"></label>
+    </div>
+    <div id="map" class="hidden" style="margin-top:12px">
+      <div class="row">
+        <label>Sərfiyyat sütunu (kVt·saat)<select id="cKwh"></select></label>
+        <label>Məbləğ sütunu (AZN, ixtiyari)<select id="cCost"></select></label>
+        <label>Obyekt/ad sütunu (ixtiyari)<select id="cName"></select></label>
+        <button class="btn" id="add">Əlavə et</button>
+      </div>
+      <p class="muted" id="hint" style="margin-bottom:0"></p>
+    </div>
+  </div>
+
+  <div id="out" class="hidden">
+    <div class="kpis" id="kpis"></div>
+    <div class="card"><h2>Aylar üzrə sərfiyyat (kVt·saat)</h2><canvas id="chart"></canvas></div>
+    <div class="card"><h2>Aylar üzrə müqayisə</h2><div class="tbl" id="tbl"></div></div>
+    <div class="card hidden" id="objCard">
+      <h2>Obyektlər üzrə fərq</h2>
+      <div class="row"><label>Müqayisə: <select id="cmp"></select></label></div>
+      <div class="tbl" id="objTbl" style="margin-top:10px"></div>
+    </div>
+  </div>
+  <p class="muted" id="empty">Hələ məlumat yoxdur. İlk ayın Excel faylını əlavə edin.</p>
+  <div class="row">
+    <button class="btn ghost" id="exp">Ehtiyat nüsxə (JSON)</button>
+    <label style="flex-direction:row;align-items:center;gap:8px">Bərpa: <input type="file" id="imp" accept=".json"></label>
+  </div>
+</main>
+
+<script>
+const KEY='elec-data-v1';
+let data=load(), pending=null;
+const $=s=>document.querySelector(s);
+const nf=new Intl.NumberFormat('az',{maximumFractionDigits:2});
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||[]}catch(e){return []}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(data))}catch(e){}}
+const MONTHS=['Yanvar','Fevral','Mart','Aprel','May','İyun','İyul','Avqust','Sentyabr','Oktyabr','Noyabr','Dekabr'];
+const mlabel=m=>{const[y,mm]=m.split('-');return MONTHS[+mm-1]+' '+y};
+const num=v=>{if(typeof v==='number')return v;const n=parseFloat(String(v).replace(/\s/g,'').replace(',','.'));return isNaN(n)?0:n};
+
+$('#file').onchange=async e=>{
+  const f=e.target.files[0]; if(!f)return;
+  const wb=XLSX.read(await f.arrayBuffer(),{type:'array'});
+  const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:''});
+  const hi=rows.findIndex(r=>r.filter(x=>x!=='').length>=2);
+  if(hi<0){alert('Faylda cədvəl tapılmadı');return}
+  const head=rows[hi].map((h,i)=>String(h).trim()||('Sütun '+(i+1)));
+  pending={head,body:rows.slice(hi+1).filter(r=>r.some(x=>x!==''))};
+  const find=re=>{const i=head.findIndex(h=>re.test(h.toLowerCase()));return i};
+  fill('#cKwh',head,find(/kvt|kwh|sərf|sarf|consum|enerji/),false);
+  fill('#cCost',head,find(/məbləğ|mebleg|azn|₼|amount|cost|ödəniş|borc/),true);
+  fill('#cName',head,find(/obyekt|abun|ad$|adı|ünvan|name|object|saya/),true);
+  const m=f.name.match(/(20\d\d)[-_. ]?(\d\d)/); if(m&&!$('#month').value)$('#month').value=m[1]+'-'+m[2];
+  $('#hint').textContent=`${pending.body.length} sətir oxundu. Sütunları yoxlayın, ay seçin və “Əlavə et” basın.`;
+  $('#map').classList.remove('hidden');
+};
+function fill(sel,head,idx,optional){
+  const s=$(sel); s.innerHTML=(optional?'<option value="-1">— yoxdur —</option>':'')+head.map((h,i)=>`<option value="${i}">${h}</option>`).join('');
+  s.value=idx>=0?idx:(optional?-1:0);
+}
+$('#add').onclick=()=>{
+  const month=$('#month').value; if(!month){alert('Ayı seçin');return}
+  const k=+$('#cKwh').value,c=+$('#cCost').value,n=+$('#cName').value,t=+$('#tariff').value||0;
+  let kwh=0,cost=0,items={};
+  for(const r of pending.body){
+    const a=num(r[k]), b=c>=0?num(r[c]):a*t;
+    kwh+=a; cost+=b;
+    if(n>=0){const nm=String(r[n]).trim(); if(nm)items[nm]=(items[nm]||0)+a}
+  }
+  data=data.filter(d=>d.month!==month);
+  data.push({month,kwh,cost,tariff:t,costFromFile:c>=0,items});
+  data.sort((a,b)=>a.month.localeCompare(b.month));
+  save(); pending=null; $('#map').classList.add('hidden'); $('#file').value=''; render();
+};
+
+const pct=(a,b)=>b?((a-b)/b*100):null;
+function delta(a,b,unit=''){
+  if(b==null)return '<span class="muted">—</span>';
+  const d=a-b,p=pct(a,b),cls=d>0?'up':d<0?'down':'';
+  const arrow=d>0?'▲ artım':d<0?'▼ azalma':'dəyişməyib';
+  return `<span class="${cls}">${arrow} ${d>0?'+':''}${nf.format(d)}${unit}${p!=null?` (${d>0?'+':''}${nf.format(p)}%)`:''}</span>`;
+}
+function render(){
+  const has=data.length>0;
+  $('#out').classList.toggle('hidden',!has); $('#empty').classList.toggle('hidden',has);
+  if(!has)return;
+  const last=data[data.length-1],prev=data[data.length-2];
+  const total=data.reduce((s,d)=>s+d.kwh,0), totalC=data.reduce((s,d)=>s+d.cost,0);
+  $('#kpis').innerHTML=`
+    <div class="kpi"><small>${mlabel(last.month)} sərfiyyatı</small><b>${nf.format(last.kwh)} kVt·s</b></div>
+    <div class="kpi"><small>${mlabel(last.month)} məbləği</small><b>${nf.format(last.cost)} AZN</b></div>
+    <div class="kpi"><small>Əvvəlki aya görə</small><b style="font-size:15px">${delta(last.kwh,prev?.kwh,' kVt·s')}</b></div>
+    <div class="kpi"><small>Cəmi (${data.length} ay)</small><b>${nf.format(total)} kVt·s</b><small>${nf.format(totalC)} AZN</small></div>`;
+  $('#tbl').innerHTML=`<table><tr><th>Ay</th><th>Sərfiyyat, kVt·s</th><th>Fərq (kVt·s)</th><th>Məbləğ, AZN</th><th>Fərq (AZN)</th><th>Orta qiymət, AZN/kVt·s</th><th></th></tr>`+
+    data.map((d,i)=>{const p=data[i-1];return `<tr><td>${mlabel(d.month)}</td><td>${nf.format(d.kwh)}</td><td>${delta(d.kwh,p?.kwh)}</td><td>${nf.format(d.cost)}</td><td>${delta(d.cost,p?.cost)}</td><td>${d.kwh?nf.format(d.cost/d.kwh):'—'}</td><td><button class="x" title="Sil" onclick="del('${d.month}')">✕</button></td></tr>`}).join('')+'</table>';
+  chart();
+  const withItems=data.filter(d=>Object.keys(d.items||{}).length);
+  $('#objCard').classList.toggle('hidden',withItems.length<2);
+  if(withItems.length>=2){
+    const s=$('#cmp'),cur=s.value;
+    s.innerHTML=withItems.slice(1).map((d,i)=>`<option value="${d.month}">${mlabel(withItems[i].month)} → ${mlabel(d.month)}</option>`).join('');
+    s.value=withItems.some(d=>d.month===cur)?cur:withItems[withItems.length-1].month;
+    objTable(withItems);
+  }
+}
+function objTable(w){
+  const m=$('#cmp').value,i=w.findIndex(d=>d.month===m),a=w[i],b=w[i-1];
+  const names=[...new Set([...Object.keys(a.items),...Object.keys(b.items)])];
+  const rows=names.map(n=>({n,a:a.items[n]||0,b:b.items[n]||0})).sort((x,y)=>Math.abs(y.a-y.b)-Math.abs(x.a-x.b));
+  $('#objTbl').innerHTML=`<table><tr><th>Obyekt</th><th>${mlabel(b.month)}</th><th>${mlabel(a.month)}</th><th>Fərq</th></tr>`+
+    rows.map(r=>`<tr><td>${r.n}</td><td>${nf.format(r.b)}</td><td>${nf.format(r.a)}</td><td>${delta(r.a,r.b)}</td></tr>`).join('')+'</table>';
+}
+$('#cmp').onchange=()=>objTable(data.filter(d=>Object.keys(d.items||{}).length));
+function del(m){if(confirm(mlabel(m)+' silinsin?')){data=data.filter(d=>d.month!==m);save();render()}}
+window.del=del;
+
+function chart(){
+  const cv=$('#chart'),dpr=devicePixelRatio||1,W=cv.clientWidth,H=cv.clientHeight;
+  cv.width=W*dpr;cv.height=H*dpr;const g=cv.getContext('2d');g.scale(dpr,dpr);
+  const css=getComputedStyle(document.body),col=css.getPropertyValue('--accent'),mut=css.getPropertyValue('--muted');
+  const max=Math.max(...data.map(d=>d.kwh))||1,pad=28,bw=Math.min(60,(W-pad*2)/data.length*.6);
+  g.font='12px system-ui';g.textAlign='center';
+  data.forEach((d,i)=>{
+    const x=pad+(W-pad*2)*(i+.5)/data.length,h=(H-pad*2)*d.kwh/max;
+    g.fillStyle=col;g.fillRect(x-bw/2,H-pad-h,bw,h);
+    g.fillStyle=mut;g.fillText(mlabel(d.month).slice(0,3)+' '+d.month.slice(2,4),x,H-8);
+    g.fillText(nf.format(d.kwh),x,H-pad-h-6);
+  });
+}
+addEventListener('resize',()=>data.length&&chart());
+
+$('#exp').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(data)],{type:'application/json'}));a.download='elektrik-serfiyyati.json';a.click()};
+$('#imp').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{data=JSON.parse(await f.text());save();render()}catch(x){alert('Fayl oxunmadı')}};
+render();
+</script>
+</body>
+</html>
