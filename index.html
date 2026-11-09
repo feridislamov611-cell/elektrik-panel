@@ -10,9 +10,19 @@
 @media (prefers-color-scheme:dark){:root{--bg:#12151b;--card:#1b2029;--text:#e8ebf0;--muted:#98a2b3;--line:#2b3240;--accent:#5b9dff;--up:#ff7b6b;--down:#4cc38a}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,sans-serif}
-header{padding:20px 16px 0;max-width:1100px;margin:auto}
-h1{font-size:22px;margin:0 0 4px}
-.sub{color:var(--muted);margin:0 0 14px}
+.top{background:#fff;border-bottom:3px solid #0b5cab}
+.top .in{max-width:1100px;margin:auto;padding:12px 16px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.logos{display:flex;align-items:center;gap:20px}
+.logos img{display:block;object-fit:contain}
+.logos .l1{height:48px;width:auto}
+.logos .l2{height:56px;width:auto}
+.logos .sep{width:1px;height:40px;background:#d0d5dd}
+.ttl{flex:1;min-width:220px;color:#1c2330}
+.ttl h1{font-size:19px;margin:0;font-weight:700;color:#0b2a55}
+.ttl p{margin:2px 0 0;font-size:13px;color:#667085}
+header{padding:16px 16px 0;max-width:1100px;margin:auto}
+footer{max-width:1100px;margin:8px auto 24px;padding:0 16px;font-size:12px;color:var(--muted)}
+@media (max-width:560px){.logos .l1{height:38px}.logos .l2{height:44px}.logos{gap:14px}}
 nav{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto}
 nav button{background:none;border:0;padding:10px 14px;color:var(--muted);font:inherit;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
 nav button.on{color:var(--accent);border-color:var(--accent);font-weight:600}
@@ -40,9 +50,18 @@ canvas{width:100%;height:220px}
 </style>
 </head>
 <body>
+<div class="top"><div class="in">
+  <div class="logos">
+    <img class="l1" src="assets/azerisiq.png" alt="Azərişıq">
+    <span class="sep"></span>
+    <img class="l2" src="assets/aztelekom.png" alt="Aztelekom">
+  </div>
+  <div class="ttl">
+    <h1>Hesabat paneli</h1>
+    <p>Aylıq Excel faylları əsasında müqayisə. Məlumat yalnız bu brauzerdə saxlanılır.</p>
+  </div>
+</div></div>
 <header>
-  <h1>Hesabat paneli: Azərişıq və Aztelekom</h1>
-  <p class="sub">Aylıq Excel faylları əsasında müqayisə. Məlumat yalnız bu brauzerdə saxlanılır.</p>
   <nav id="tabs">
     <button class="on" data-t="elec">1. Elektrik sərfiyyatı</button>
     <button data-t="next" disabled title="Növbəti bölmə hələ əlavə edilməyib">2. (tezliklə)</button>
@@ -85,6 +104,7 @@ canvas{width:100%;height:220px}
   </div>
 </main>
 
+<footer>Bu daxili hesabat paneli rəsmi şirkət səhifəsi deyil. Loqolar yalnız məlumat məqsədilə göstərilir və müvafiq şirkətlərə məxsusdur.</footer>
 <script>
 const KEY='elec-data-v1';
 let data=load(), pending=null;
