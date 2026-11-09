@@ -64,7 +64,7 @@ canvas{width:100%;height:220px}
 <header>
   <nav id="tabs">
     <button class="on" data-t="elec">1. Elektrik sərfiyyatı</button>
-    <button data-t="next" disabled title="Növbəti bölmə hələ əlavə edilməyib">2. (tezliklə)</button>
+    <button data-t="tel">2. Aztelekom</button>
   </nav>
 </header>
 
@@ -102,6 +102,19 @@ canvas{width:100%;height:220px}
     <button class="btn ghost" id="exp">Ehtiyat nüsxə (JSON)</button>
     <label style="flex-direction:row;align-items:center;gap:8px">Bərpa: <input type="file" id="imp" accept=".json"></label>
   </div>
+</main>
+
+<main id="tel" class="hidden">
+  <div class="card">
+    <h2>Aztelekom</h2>
+    <p class="muted" style="margin:0 0 12px">Bu bölmənin strukturu hazırdır, məzmunu isə hələ doldurulmayıb. Excel formatı və göstəricilər müəyyən olunduqdan sonra buraya əlavə ediləcək.</p>
+    <div class="kpis" style="margin-bottom:0">
+      <div class="kpi"><small>Göstərici 1</small><b>—</b></div>
+      <div class="kpi"><small>Göstərici 2</small><b>—</b></div>
+      <div class="kpi"><small>Göstərici 3</small><b>—</b></div>
+    </div>
+  </div>
+  <div class="card"><h2>Aylar üzrə müqayisə</h2><p class="muted" style="margin:0">Excel formatı müəyyən olunandan sonra cədvəl və diaqram burada görünəcək.</p></div>
 </main>
 
 <footer>Bu daxili hesabat paneli rəsmi şirkət səhifəsi deyil. Loqolar yalnız məlumat məqsədilə göstərilir və müvafiq şirkətlərə məxsusdur.</footer>
@@ -209,6 +222,11 @@ addEventListener('resize',()=>data.length&&chart());
 
 $('#exp').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(data)],{type:'application/json'}));a.download='elektrik-serfiyyati.json';a.click()};
 $('#imp').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{data=JSON.parse(await f.text());save();render()}catch(x){alert('Fayl oxunmadı')}};
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x===b));
+  document.querySelectorAll('main').forEach(m=>m.classList.toggle('hidden',m.id!==b.dataset.t));
+  if(b.dataset.t==='elec'&&data.length)chart();
+});
 render();
 </script>
 </body>
