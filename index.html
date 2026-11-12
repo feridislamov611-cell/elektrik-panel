@@ -93,7 +93,7 @@ canvas{width:100%;height:220px}
 
 <main id="cmp">
   <div class="hero">
-    <h2>Elektrik enerjisi sərfiyyatı: may–oktyabr 2025 və 2026</h2>
+    <h2>Elektrik enerjisi sərfiyyatı: iyun–oktyabr 2025 və 2026</h2>
     <p>1 saylı Rabitə Xidmətləri Mərkəzi · abunə kodları 04/200-068 və 04/100-107 · mənbə: Azərişıq hesab-fakturaları</p>
   </div>
   <div class="kpis big" id="cKpis"></div>
@@ -112,7 +112,7 @@ canvas{width:100%;height:220px}
   <div class="card"><h2>Tarif təhlili</h2><div class="tbl" id="cTar"></div><p class="note" id="cTarNote"></p></div>
   <div class="card"><h2>Sayğac göstəricilərinin yoxlanması (Excel)</h2><div id="cFlags"></div></div>
   <div class="card"><h2>Excel sayğac fərqləri (xam, əmsalsız)</h2>
-    <p class="note" style="margin:0 0 8px">Hər sayğacın may–oktyabr üzrə göstərici fərqinin cəmi. Səhv göstəricili aylar hər iki ildən çıxarılıb (cüt müqayisə).</p>
+    <p class="note" style="margin:0 0 8px">Hər sayğacın iyun–oktyabr üzrə göstərici fərqinin cəmi. Səhv göstəricili aylar hər iki ildən çıxarılıb (cüt müqayisə).</p>
     <div class="tbl" id="cMeters"></div></div>
   <div class="row noprint"><button class="btn" onclick="print()">Çap et / PDF</button></div>
 </main>
@@ -173,7 +173,7 @@ canvas{width:100%;height:220px}
 (function(){
 const D=window.PANEL_DATA; if(!D)return;
 const $=s=>document.querySelector(s), nf=new Intl.NumberFormat('az',{maximumFractionDigits:0}), nf2=new Intl.NumberFormat('az',{minimumFractionDigits:2,maximumFractionDigits:2}), nf3=new Intl.NumberFormat('az',{minimumFractionDigits:3,maximumFractionDigits:3});
-const MN=['May','İyun','İyul','Avqust','Sentyabr','Oktyabr'], MS=[5,6,7,8,9,10], AB=['200-068','100-107'];
+const MN=['İyun','İyul','Avqust','Sentyabr','Oktyabr'], MS=[6,7,8,9,10], AB=['200-068','100-107'];
 const key=(y,m)=>y+'-'+String(m).padStart(2,'0');
 const g=(y,m,f,ab)=>{const v=D.inv[key(y,m)];return (ab?[ab]:AB).reduce((s,a)=>s+(v[a]?v[a][f]:0),0)};
 const sum=(y,f,ab)=>MS.reduce((s,m)=>s+g(y,m,f,ab),0);
@@ -186,8 +186,8 @@ const dp=(a,b)=>`<span class="${cl(a-b)}">${sp(pc(a,b))}</span>`;
 
 const k25=sum(2025,'kwh'),k26=sum(2026,'kwh'),a25=sum(2025,'total'),a26=sum(2026,'total');
 $('#cKpis').innerHTML=`
- <div class="kpi"><small>Sərfiyyat 2025 (may–oktyabr)</small><b>${nf.format(k25)} kVt·s</b><span class="sub muted">${nf.format(a25)} AZN</span></div>
- <div class="kpi"><small>Sərfiyyat 2026 (may–oktyabr)</small><b>${nf.format(k26)} kVt·s</b><span class="sub muted">${nf.format(a26)} AZN</span></div>
+ <div class="kpi"><small>Sərfiyyat 2025 (iyun–oktyabr)</small><b>${nf.format(k25)} kVt·s</b><span class="sub muted">${nf.format(a25)} AZN</span></div>
+ <div class="kpi"><small>Sərfiyyat 2026 (iyun–oktyabr)</small><b>${nf.format(k26)} kVt·s</b><span class="sub muted">${nf.format(a26)} AZN</span></div>
  <div class="kpi"><small>Fərq (kVt·saat)</small><b class="${cl(k26-k25)}">${sg(k26-k25)}</b><span class="sub ${cl(k26-k25)}">${sp(pc(k26,k25))}</span></div>
  <div class="kpi"><small>Fərq (AZN, ƏDV daxil)</small><b class="${cl(a26-a25)}">${sg(a26-a25)}</b><span class="sub ${cl(a26-a25)}">${sp(pc(a26,a25))}</span></div>`;
 
@@ -201,7 +201,7 @@ function chart(){
   const A=MS.map(m=>g(2025,m,f)),B=MS.map(m=>g(2026,m,f)),max=Math.max(...A,...B)*1.12,pt=22,pb=44,pl=8,pr=8;
   c.strokeStyle=line;c.fillStyle=mut;c.font='11px system-ui';c.textAlign='center';
   for(let i=0;i<=4;i++){const y=pt+(H-pt-pb)*i/4;c.beginPath();c.moveTo(pl,y);c.lineTo(W-pr,y);c.stroke()}
-  const gw=(W-pl-pr)/6,bw=Math.min(34,gw*.32);
+  const gw=(W-pl-pr)/MS.length,bw=Math.min(34,gw*.32);
   MS.forEach((m,i)=>{
     const cx=pl+gw*(i+.5);
     [[A[i],'#9aa7bd',-bw/2-1],[B[i],acc,bw/2+1]].forEach(([v,col,dx])=>{
@@ -247,15 +247,15 @@ let tt='<table><tr><th>Ay</th><th>2025, AZN/kVt·s</th><th>2026, AZN/kVt·s</th>
 MS.forEach((m,i)=>tt+=`<tr><td>${MN[i]}</td><td>${nf3.format(rate(2025,m))}</td><td>${nf3.format(rate(2026,m))}</td></tr>`);
 $('#cTar').innerHTML=tt+'</table>';
 const rates=[...MS.map(m=>rate(2025,m)),...MS.map(m=>rate(2026,m))],rmin=Math.min(...rates),rmax=Math.max(...rates);
-$('#cTarNote').textContent=(rmax-rmin<0.0006)?`Orta qiymət bütün 12 ayda eynidir (${nf3.format(rmax)} AZN/kVt·s, ƏDV daxil; ƏDV-siz ${nf3.format(rmax/1.18)}). Deməli məbləğdəki dəyişiklik yalnız sərfiyyatdan qaynaqlanır, tarif təsiri yoxdur.`:`Orta qiymət ${nf3.format(rmin)}–${nf3.format(rmax)} AZN/kVt·s arasında dəyişib.`;
+$('#cTarNote').textContent=(rmax-rmin<0.0006)?`Orta qiymət bütün ${MS.length*2} ayda eynidir (${nf3.format(rmax)} AZN/kVt·s, ƏDV daxil; ƏDV-siz ${nf3.format(rmax/1.18)}). Deməli məbləğdəki dəyişiklik yalnız sərfiyyatdan qaynaqlanır, tarif təsiri yoxdur.`:`Orta qiymət ${nf3.format(rmin)}–${nf3.format(rmax)} AZN/kVt·s arasında dəyişib.`;
 
 // Yekunlar
 const worst=rows[0],best=rows[rows.length-1];
 const bestMonth=MS.map((m,i)=>[MN[i],pc(g(2026,m,'kwh'),g(2025,m,'kwh'))]).sort((x,y)=>x[1]-y[1]);
 const s107=sum(2025,'kwh','100-107'),t107=sum(2026,'kwh','100-107'),s68=sum(2025,'kwh','200-068'),t68=sum(2026,'kwh','200-068');
 const L=[];
-L.push(`2026-cı ilin may–oktyabr dövründə elektrik sərfiyyatı 2025-ci ilin eyni dövrü ilə müqayisədə <b class="${cl(k26-k25)}">${nf.format(Math.abs(k26-k25))} kVt·saat (${nf2.format(Math.abs(pc(k26,k25)))}%) ${k26<k25?'az':'çox'}</b> olub; bu, təxminən <b>${nf.format(Math.abs(a26-a25))} AZN</b> ${a26<a25?'qənaət':'əlavə xərc'} deməkdir (ƏDV daxil).`);
-L.push(`Ən çox azalma <b>${bestMonth[0][0]}</b> ayında (${sp(bestMonth[0][1])}), ən az azalma <b>${bestMonth[5][0]}</b> ayındadır (${sp(bestMonth[5][1])}). Hər 6 ayda sərfiyyat 2025-dən aşağıdır.`);
+L.push(`2026-cı ilin iyun–oktyabr dövründə elektrik sərfiyyatı 2025-ci ilin eyni dövrü ilə müqayisədə <b class="${cl(k26-k25)}">${nf.format(Math.abs(k26-k25))} kVt·saat (${nf2.format(Math.abs(pc(k26,k25)))}%) ${k26<k25?'az':'çox'}</b> olub; bu, təxminən <b>${nf.format(Math.abs(a26-a25))} AZN</b> ${a26<a25?'qənaət':'əlavə xərc'} deməkdir (ƏDV daxil).`);
+L.push(`Ən çox azalma <b>${bestMonth[0][0]}</b> ayında (${sp(bestMonth[0][1])}), ən az azalma <b>${bestMonth[bestMonth.length-1][0]}</b> ayındadır (${sp(bestMonth[bestMonth.length-1][1])}). Hər ${MS.length} ayda sərfiyyat 2025-dən aşağıdır.`);
 L.push(`Əsas abunə (04/200-068) üzrə <b class="down">${sp(pc(t68,s68))}</b> (${sg(t68-s68)} kVt·s), Tbilisi pr. (04/100-107) üzrə isə <b class="${cl(t107-s107)}">${sp(pc(t107,s107))}</b> (${sg(t107-s107)} kVt·s). Tbilisi pr.-də artım avqust ayından (${nf.format(g(2025,8,'kwh','100-107'))} → ${nf.format(g(2026,8,'kwh','100-107'))} kVt·s) gəlir, səbəbi araşdırılmalıdır.`);
 const dn=rows.filter(r=>r.k!=='107'&&r.k!=='digər');const bd=[...dn].sort((x,y)=>(x.b-x.a)-(y.b-y.a))[0];
 L.push(`EATS-lər üzrə ən böyük azalma <b>${bd.n}</b> (${sg(bd.b-bd.a)} kVt·s, ${sp(pc(bd.b,bd.a))}). Artım göstərən EATS: ${dn.filter(r=>r.b>r.a).map(r=>`<b>${r.n}</b> (${sg(r.b-r.a)} kVt·s)`).join(', ')||'yoxdur'}.`);
@@ -263,15 +263,15 @@ if(bd.k==='568/569')L.push(`ATS-568/569-dakı böyük azalma (${sp(pc(bd.b,bd.a)
 $('#cSum').innerHTML=L.map(x=>`<li>${x}</li>`).join('');
 
 // Yoxlama (Excel)
-const fl=D.flags,mon=m=>{const[y,mm]=m.split('-');return MN[+mm-5]+' '+y};
+const fl=D.flags.filter(f=>MS.includes(+f.month.split('-')[1])),mon=m=>{const[y,mm]=m.split('-');return MN[+mm-6]+' '+y};
 $('#cFlags').innerHTML=(fl.length?fl.map(f=>`<div class="warn"><b>${mon(f.month)} · ${f.name}</b> — ${f.why}.</div>`).join(''):'<p class="muted">Problem tapılmadı.</p>')+
   '<p class="note">Bu aylar aşağıdakı Excel müqayisəsindən çıxarılıb. Hesab-fakturalar (rəsmi məbləğlər) bu səhvlərdən təsirlənmir.</p>';
 
 // Excel sayğac fərqləri
 let tm='<table><tr><th>Sayğac</th><th>2025</th><th>2026</th><th>Fərq %</th><th>Ay</th></tr>';
-D.meters.map(m=>{let a=0,b=0,n=0;m.y25.forEach((x,i)=>{const y=m.y26[i];if(x!=null&&y!=null){a+=x;b+=y;n++}});return{m,a,b,n}})
+D.meters.map(m=>{let a=0,b=0,n=0;m.y25.slice(1).forEach((x,i)=>{const y=m.y26.slice(1)[i];if(x!=null&&y!=null){a+=x;b+=y;n++}});return{m,a,b,n}})
  .filter(r=>r.a+r.b>0).sort((x,y)=>Math.abs(y.b-y.a)-Math.abs(x.b-x.a))
- .forEach(r=>tm+=`<tr><td>${r.m.name}</td><td>${nf.format(r.a)}</td><td>${nf.format(r.b)}</td><td>${r.a>0?dp(r.b,r.a):'—'}</td><td>${r.n}/6</td></tr>`);
+ .forEach(r=>tm+=`<tr><td>${r.m.name}</td><td>${nf.format(r.a)}</td><td>${nf.format(r.b)}</td><td>${r.a>0?dp(r.b,r.a):'—'}</td><td>${r.n}/${MS.length}</td></tr>`);
 $('#cMeters').innerHTML=tm+'</table>';
 
 window.__cmpChart=chart;

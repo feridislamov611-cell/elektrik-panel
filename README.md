@@ -2,7 +2,7 @@
 
 Azərişıq və Aztelekom üçün hesabat paneli. Birinci bölmə: elektrik sərfiyyatı.
 
-## 2025–2026 müqayisəsi (may–oktyabr)
+## 2025–2026 müqayisəsi (iyun–oktyabr)
 
 `index.html` açıldıqda hazır data ilə müqayisə görünür (kVt·saat, AZN, abunə kodları, EATS üzrə, tarif təhlili, Excel yoxlaması, çap/PDF). Data `assets/data.js` faylındadır və heç bir serverə göndərilmir.
 
