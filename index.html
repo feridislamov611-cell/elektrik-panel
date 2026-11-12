@@ -291,7 +291,7 @@ const s107=sum(2025,'kwh','100-107'),t107=sum(2026,'kwh','100-107'),s68=sum(2025
 const L=[];
 L.push(`2026-cı ilin iyun–oktyabr dövründə elektrik sərfiyyatı 2025-ci ilin eyni dövrü ilə müqayisədə <b class="${cl(k26-k25)}">${nf.format(Math.abs(k26-k25))} kVt·saat (${nf2.format(Math.abs(pc(k26,k25)))}%) ${k26<k25?'az':'çox'}</b> olub; bu, fakturalanan məbləğ də <b>${nf.format(Math.abs(a26-a25))} AZN</b> ${a26<a25?'azdır':'çoxdur'} (ƏDV daxil). Amma hesab dövrləri eyni uzunluqda deyil, növbəti bəndə baxın.`);
 L.push(`<b>Dövr uzunluğu fərqi:</b> 04/200-068 fakturaları 2025-də cəmi ${dy(2025,'200-068')} gün, 2026-da ${dy(2026,'200-068')} gün əhatə edir; 04/100-107 üçün ${dy(2025,'100-107')} və ${dy(2026,'100-107')} gün. Gündəlik orta götürəndə ümumi sərfiyyat ${nf.format(dd(2025))} → ${nf.format(dd(2026))} kVt·s/gün (<b class="${cl(dd(2026)-dd(2025))}">${sp(pc(dd(2026),dd(2025)))}</b>); 04/200-068 üzrə ${sp(pc(sum(2026,'kwh','200-068')/dy(2026,'200-068'),sum(2025,'kwh','200-068')/dy(2025,'200-068')))}, 04/100-107 üzrə ${sp(pc(sum(2026,'kwh','100-107')/dy(2026,'100-107'),sum(2025,'kwh','100-107')/dy(2025,'100-107')))}. Yəni fakturalardakı cəm azalmanın böyük hissəsi qısa hesab dövrlərindən gəlir.`);
-L.push(`<b>Ortaq sayğaclar:</b> 2025 fakturalarında olan ${D.removed.length} sayğac (əsasən MTK alt-sayğacları, iyun–oktyabr üzrə ${nf.format(REM)} kVt·s) 2026 fakturalarında yoxdur. Yalnız hər iki ildə fakturalanan sayğacları götürsək, 04/200-068: ${nf.format(c25)} → ${nf.format(c26)} kVt·s (<b class="${cl(c26-c25)}">${sp(pc(c26,c25))}</b>), gündəlik orta ${nf.format(cd25)} → ${nf.format(cd26)} kVt·s/gün (<b class="${cl(cd26-cd25)}">${sp(pc(cd26,cd25))}</b>). Bu, ən ədalətli müqayisədir.`);
+L.push(`<b>Ortaq sayğaclar:</b> 2025 fakturalarında olan ${D.removed.length} sayğac (əsasən MTK alt-sayğacları, iyun–oktyabr üzrə ${nf.format(REM)} kVt·s) 2026-da söndürülüb, bu hissə real azalmadır. Yalnız hər iki ildə fakturalanan sayğacları götürsək, 04/200-068: ${nf.format(c25)} → ${nf.format(c26)} kVt·s (<b class="${cl(c26-c25)}">${sp(pc(c26,c25))}</b>), gündəlik orta ${nf.format(cd25)} → ${nf.format(cd26)} kVt·s/gün (<b class="${cl(cd26-cd25)}">${sp(pc(cd26,cd25))}</b>). Bu, ən ədalətli müqayisədir.`);
 L.push(`Ən çox azalma <b>${bestMonth[0][0]}</b> ayında (${sp(bestMonth[0][1])}), ən az azalma <b>${bestMonth[bestMonth.length-1][0]}</b> ayındadır (${sp(bestMonth[bestMonth.length-1][1])}). Faktura cəmi hər ${MS.length} ayda 2025-dən aşağıdır, amma bu, qısa hesab dövrlərindən də təsirlənir.`);
 L.push(`Əsas abunə (04/200-068) üzrə <b class="down">${sp(pc(t68,s68))}</b> (${sg(t68-s68)} kVt·s), Tbilisi pr. (04/100-107) üzrə isə <b class="${cl(t107-s107)}">${sp(pc(t107,s107))}</b> (${sg(t107-s107)} kVt·s). Tbilisi pr.-də artım avqust ayından (${nf.format(g(2025,8,'kwh','100-107'))} → ${nf.format(g(2026,8,'kwh','100-107'))} kVt·s) gəlir, səbəbi araşdırılmalıdır.`);
 const dn=rows.filter(r=>r.k!=='107'&&r.k!=='digər');const bd=[...dn].sort((x,y)=>(x.b-x.a)-(y.b-y.a))[0];
@@ -302,7 +302,7 @@ $('#cSum').innerHTML=L.map(x=>`<li>${x}</li>`).join('');
 // Yoxlama (Excel)
 const fl=D.flags.filter(f=>MS.includes(+f.month.split('-')[1])),mon=m=>{const[y,mm]=m.split('-');return MN[+mm-6]+' '+y};
 $('#cFlags').innerHTML=(fl.length?fl.map(f=>`<div class="warn"><b>${mon(f.month)} · ${f.name}</b> — ${f.why}.</div>`).join(''):'<p class="muted">Problem tapılmadı.</p>')+
-  '<p class="note">Bu aylar aşağıdakı Excel müqayisəsindən çıxarılıb. Hesab-fakturalar (rəsmi məbləğlər) bu səhvlərdən təsirlənmir.</p>'+`<div class="warn"><b>2026 fakturalarında olmayan sayğaclar (${D.removed.length}):</b> ${D.removed.join(', ')}. Excel-də də bu sayğacların çoxu 2026-da 0 göstərir. Bunlara nə olduğunu (başqa abunəyə keçirilib, söndürülüb və s.) təsdiq etmək lazımdır.</div>`;
+  '<p class="note">Bu aylar aşağıdakı Excel müqayisəsindən çıxarılıb. Hesab-fakturalar (rəsmi məbləğlər) bu səhvlərdən təsirlənmir.</p>'+`<div class="warn"><b>2026-da söndürülmüş sayğaclar (${D.removed.length}):</b> ${D.removed.join(', ')}. Bu sayğaclar 2026 fakturalarında yoxdur və Excel-də 0 göstərir.</div>`;
 
 // Excel sayğac fərqləri
 let tm='<table><tr><th>Sayğac</th><th>2025</th><th>2026</th><th>Fərq %</th><th>Ay</th></tr>';
@@ -393,6 +393,12 @@ function fin(){
   const A=rowsT.reduce((s,r)=>s+r.a,0),B=rowsT.reduce((s,r)=>s+r.b,0),X=rowsT.reduce((s,r)=>s+r.x,0),Y=rowsT.reduce((s,r)=>s+r.y,0);
   const dday=y=>AB.reduce((s,k)=>s+MS.reduce((q,m)=>q+inv(y,m,k).kwh,0)/MS.reduce((q,m)=>q+days(y,m,k),0),0);
   const G5=dday(2025),G6=dday(2026);
+  const d5x=MS.reduce((q,m)=>q+days(2025,m,'200-068'),0),d6x=MS.reduce((q,m)=>q+days(2026,m,'200-068'),0);
+  const REMx=MS.reduce((s,m)=>s+(inv(2025,m,'200-068').rem||0),0);
+  const c5x=MS.reduce((s,m)=>s+inv(2025,m,'200-068').kwh,0)-REMx,c6x=MS.reduce((s,m)=>s+inv(2026,m,'200-068').kwh,0);
+  const r5x=c5x/d5x,r6x=c6x/d6x;
+  const K7_5=MS.reduce((s,m)=>s+inv(2025,m,'100-107').kwh,0),K7_6=MS.reduce((s,m)=>s+inv(2026,m,'100-107').kwh,0);
+  const days107_5=MS.reduce((q,m)=>q+days(2025,m,'100-107'),0),days107_6=MS.reduce((q,m)=>q+days(2026,m,'100-107'),0);
   const dday68=y=>MS.reduce((q,m)=>q+days(y,m,'200-068'),0);
   const REMT=MS.reduce((s,m)=>s+(inv(2025,m,'200-068').rem||0),0);
   const C5=MS.reduce((s,m)=>s+inv(2025,m,'200-068').kwh,0)-REMT,C6=MS.reduce((s,m)=>s+inv(2026,m,'200-068').kwh,0);
@@ -405,8 +411,15 @@ function fin(){
   <div class="kpi"><small>Gündəlik orta, kVt·s/gün</small><b>${nf.format(G5)} → ${nf.format(G6)}</b><span class="sub ${cl(G6-G5)}">${sp(pc(G6,G5))}</span></div></div>
   <div class="tbl">${t}</div>
   <p class="story" style="margin-top:12px">Fakturalanan cəmdə ${sp(pc(B,A))} azalma görünür, amma 2026 fakturaları daha qısa dövrü əhatə edir. Gündəlik orta götürəndə sərfiyyat demək olar ki, eynidir (${sp(pc(G6,G5))}). Ayrı-ayrı aylarda gündəlik göstərici dövr sərhədlərinin sürüşməsi səbəbilə xeyli dəyişir (məsələn iyun +21%, iyul −14%), ona görə ən etibarlı müqayisə 5 ayın cəmidir. Abunələr fərqli istiqamətdə gedir: əsas abunədə (04/200-068) azalma, Tbilisi pr.-də (04/100-107) artım.</p>
+  <h2 style="margin-top:16px">${sg(B-A)} kVt·s fərqi nədən yaranır</h2>
+  <div class="tbl"><table><tr><th>Səbəb</th><th>kVt·s</th><th>İzah</th></tr>
+   <tr><td>Söndürülmüş sayğaclar</td><td>${dl(0,REMT)}</td><td>${D.removed.length} MTK və digər alt-sayğac 2026-da söndürülüb (real azalma)</td></tr>
+   <tr><td>Daha qısa hesab dövrü (04/200-068)</td><td>${dl(0,-(d6x-d5x)*r5x)}</td><td>${d5x} gün əvəzinə ${d6x} gün fakturalanıb (hesab səbəbidir, real azalma deyil)</td></tr>
+   <tr><td>Real gündəlik sərfiyyat (04/200-068)</td><td>${dl((r6x-r5x)*d6x,0)}</td><td>${nf.format(r5x)} → ${nf.format(r6x)} kVt·s/gün (${sp(pc(r6x,r5x))})</td></tr>
+   <tr><td>Tbilisi pr. (04/100-107)</td><td>${dl(K7_6,K7_5)}</td><td>sərfiyyat artıb (${sp(pc(K7_6/days107_6,K7_5/days107_5))} gündəlik)</td></tr>
+   <tr class="tot"><td>Cəmi</td><td>${dl(B,A)}</td><td>faktura cəmi fərqi</td></tr></table></div>
   <h2 style="margin-top:16px">Ədalətli müqayisə: yalnız ortaq sayğaclar</h2>
-  <p class="story">2025 fakturalarında olan ${D.removed.length} sayğac (${D.removed.join(', ')}) 2026 fakturalarında yoxdur; iyun–oktyabr 2025-də onların sərfiyyatı ${nf.format(REMT)} kVt·s olub. Bunları çıxsaq, 04/200-068: <b>${nf.format(C5)} → ${nf.format(C6)} kVt·s</b> (<span class="${cl(C6-C5)}">${sp(pc(C6,C5))}</span>), gündəlik orta <b>${nf.format(C5/dday68(2025))} → ${nf.format(C6/dday68(2026))} kVt·s/gün</b> (<span class="${cl(C6/dday68(2026)-C5/dday68(2025))}">${sp(pc(C6/dday68(2026),C5/dday68(2025)))}</span>).</p>
+  <p class="story">2025 fakturalarında olan ${D.removed.length} sayğac (${D.removed.join(', ')}) 2026-da söndürülüb; iyun–oktyabr 2025-də onların sərfiyyatı ${nf.format(REMT)} kVt·s olub. Bu hissə real azalmadır. Müqayisə üçün onları çıxsaq, 04/200-068: <b>${nf.format(C5)} → ${nf.format(C6)} kVt·s</b> (<span class="${cl(C6-C5)}">${sp(pc(C6,C5))}</span>), gündəlik orta <b>${nf.format(C5/dday68(2025))} → ${nf.format(C6/dday68(2026))} kVt·s/gün</b> (<span class="${cl(C6/dday68(2026)-C5/dday68(2025))}">${sp(pc(C6/dday68(2026),C5/dday68(2025)))}</span>).</p>
   <div class="warn">Yoxlanmalı: iyun 2026 fakturasında 04/200-068 hesab dövrü 19.05.2026-da başlayır, halbuki may fakturası 13.05.2026-da bitir (6 günlük boşluq).</div></div>`;
 }
 function render(){bar();$('#stBody').innerHTML=cur===0?intro():cur===N-1?fin():month(cur);}
