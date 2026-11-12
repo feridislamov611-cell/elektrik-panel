@@ -70,6 +70,8 @@ def parse_invoice(text):
         ser = re.split("M", mm.group(1))[0]
         coef.setdefault(ser, int(mm.group(2)))
     res["coef"] = coef
+    pm = re.search(r"(\d\d\.\d\d\.\d{4}) tarixind\S* (\d\d\.\d\d\.\d{4}) tarixin", re.sub(r"\s+", " ", t))
+    res["period"] = (pm.group(1) + " – " + pm.group(2)) if pm else None
     return res
 
 
@@ -102,6 +104,7 @@ for p, text in sorted(srcs):
         if g is None: g = "digər"
         if r["kwh"] is None: continue
         ats[g] = ats.get(g, 0) + r["kwh"]
+    inv["_rows"] = [(r["serial"], r["kwh"]) for r in rows if r["kwh"] is not None] if ab == "200-068" else []
     inv["ats"] = {k: round(v, 2) for k, v in ats.items()}
     inv["rows_sum"] = round(sum(ats.values()), 2)
     inv["rows_ok"] = abs(inv["rows_sum"] - (inv["kwh"] or 0)) < 1.5
@@ -111,6 +114,22 @@ for p, text in sorted(srcs):
     inv["total"] = round(inv["net"] + inv["vat"], 2)
     invoices.setdefault(key, {})
     invoices[key].setdefault(ab, inv)   # May 2025 200-068 iki nüsxədir
+
+# ---------- Yalnız 2025-də fakturalanan sayğaclar ----------
+sers = {2025: set(), 2026: set()}
+for k, v in invoices.items():
+    for ab, i in v.items():
+        for ser, kw in i["_rows"]:
+            if len(ser) >= 5: sers[int(k[:4])].add(ser)
+only25 = sers[2025] - sers[2026]
+for k, v in invoices.items():
+    for ab, i in v.items():
+        i["removed_kwh"] = round(sum(kw for ser, kw in i["_rows"] if ser in only25 and k.startswith("2025")), 2)
+        i.pop("_rows")
+ser2name = {}
+for rows in excel.values():
+    for r in rows: ser2name[r["serial"]] = r["name"]
+removed_names = sorted({ser2name.get(x, x) for x in only25})
 
 # ---------- Excel yoxlaması ----------
 flags = []
@@ -139,5 +158,5 @@ for k in sorted(excel):
             flags.append(dict(month=k, name=r["name"], serial=r["serial"], prev=r["prev"], cur=p["cur"], diff=round(r["prev"]-p["cur"],2),
                               why=f"başlanğıc göstərici ({r['prev']:,.0f}) keçən ayın son göstəricisi ({p['cur']:,.0f}) ilə üst-üstə düşmür"))
 
-json.dump(dict(excel=excel, invoices=invoices, flags=flags), open(OUT, "w"), ensure_ascii=False, indent=1)
+json.dump(dict(excel=excel, invoices=invoices, flags=flags, removed_names=removed_names), open(OUT, "w"), ensure_ascii=False, indent=1)
 print("ok", OUT, "| faktura:", sum(len(v) for v in invoices.values()), "| bayraq:", len(flags))

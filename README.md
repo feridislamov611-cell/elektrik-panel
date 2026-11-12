@@ -4,7 +4,7 @@ Azərişıq və Aztelekom üçün hesabat paneli. Birinci bölmə: elektrik sər
 
 ## 2025–2026 müqayisəsi (iyun–oktyabr)
 
-`index.html` açıldıqda hazır data ilə müqayisə görünür (kVt·saat, AZN, abunə kodları, EATS üzrə, tarif təhlili, Excel yoxlaması, çap/PDF). Data `assets/data.js` faylındadır və heç bir serverə göndərilmir.
+`index.html` açıldıqda hazır data ilə müqayisə görünür (kVt·saat, AZN, abunə kodları, EATS üzrə, tarif təhlili, Excel yoxlaması, çap/PDF). Ayrıca **Addım-addım müqayisə** tabı hər ayı ardıcıl göstərir (hesab dövrünün gün sayına görə gündəlik orta və yalnız ortaq sayğaclarla müqayisə daxil). Data `assets/data.js` faylındadır və heç bir serverə göndərilmir.
 
 Mənbələr: 12 aylıq hesab-faktura (04/200-068 və 04/100-107) və 12 aylıq EATS Excel cədvəli.
 

@@ -69,6 +69,20 @@ canvas{width:100%;height:220px}
   main.hidden{display:none!important}#cmp.hidden{display:block!important}#elec,#tel{display:none!important}
   .hero{background:#0b2a55!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
+
+.stepbar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.stepbar button{font:inherit;padding:6px 12px;border:1px solid var(--line);border-radius:16px;background:var(--card);color:var(--muted);cursor:pointer}
+.stepbar button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.stepbar button.done{color:var(--text)}
+.prog{height:4px;background:var(--line);border-radius:2px;margin-bottom:14px}.prog i{display:block;height:100%;background:var(--accent);border-radius:2px;transition:width .3s}
+.nav2{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:14px 0}
+.nav2 .grow{flex:1}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.yr{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--card)}
+.yr h3{margin:0 0 6px;font-size:14px;color:var(--muted)}.yr b.v{font-size:22px;display:block}
+.yr small{color:var(--muted)}
+.story{font-size:15px;line-height:1.6;margin:0 0 14px}
+.dim{opacity:.55}
 </style>
 </head>
 <body>
@@ -85,9 +99,10 @@ canvas{width:100%;height:220px}
 </div></div>
 <header>
   <nav id="tabs">
-    <button class="on" data-t="cmp">1. Elektrik: 2025–2026 müqayisəsi</button>
+    <button class="on" data-t="cmp">1. Ümumi müqayisə</button>
+    <button data-t="steps">2. Addım-addım müqayisə</button>
     <button data-t="elec">Aylıq Excel əlavə et</button>
-    <button data-t="tel">2. Aztelekom</button>
+    <button data-t="tel">3. Aztelekom</button>
   </nav>
 </header>
 
@@ -115,6 +130,19 @@ canvas{width:100%;height:220px}
     <p class="note" style="margin:0 0 8px">Hər sayğacın iyun–oktyabr üzrə göstərici fərqinin cəmi. Səhv göstəricili aylar hər iki ildən çıxarılıb (cüt müqayisə).</p>
     <div class="tbl" id="cMeters"></div></div>
   <div class="row noprint"><button class="btn" onclick="print()">Çap et / PDF</button></div>
+</main>
+
+<main id="steps" class="hidden">
+  <div class="hero"><h2>Addım-addım müqayisə</h2><p>Hər ay ayrıca: iyun 2025 ↔ iyun 2026, sonra iyul və s. Ox düymələri ilə də keçə bilərsiniz.</p></div>
+  <div class="stepbar" id="stBar"></div>
+  <div class="prog"><i id="stProg"></i></div>
+  <div id="stBody"></div>
+  <div class="nav2 noprint">
+    <button class="btn ghost" id="stPrev">← Əvvəlki</button>
+    <button class="btn" id="stNext">Növbəti →</button>
+    <span class="grow"></span>
+    <button class="btn ghost" id="stAuto">▶ Avtomatik nümayiş</button>
+  </div>
 </main>
 
 <main id="elec" class="hidden">
@@ -185,11 +213,18 @@ const dl=(a,b,f=sg)=>`<span class="${cl(a-b)}">${a>b?'▲':a<b?'▼':''} ${f(a-b
 const dp=(a,b)=>`<span class="${cl(a-b)}">${sp(pc(a,b))}</span>`;
 
 const k25=sum(2025,'kwh'),k26=sum(2026,'kwh'),a25=sum(2025,'total'),a26=sum(2026,'total');
+const pd=(y,m,ab)=>{const q=D.inv[key(y,m)][ab].period.split('–').map(x=>x.trim().split('.').reverse().join('-'));return Math.round((new Date(q[1])-new Date(q[0]))/864e5)};
+const dy=(y,ab)=>MS.reduce((s,m)=>s+pd(y,m,ab),0);
+const dd=y=>AB.reduce((s,a)=>s+sum(y,'kwh',a)/dy(y,a),0);
+const REM=MS.reduce((s,m)=>s+(D.inv[key(2025,m)]['200-068'].rem||0),0);
+const c25=sum(2025,'kwh','200-068')-REM,c26=sum(2026,'kwh','200-068');
+const cd25=c25/dy(2025,'200-068'),cd26=c26/dy(2026,'200-068');
 $('#cKpis').innerHTML=`
  <div class="kpi"><small>Sərfiyyat 2025 (iyun–oktyabr)</small><b>${nf.format(k25)} kVt·s</b><span class="sub muted">${nf.format(a25)} AZN</span></div>
  <div class="kpi"><small>Sərfiyyat 2026 (iyun–oktyabr)</small><b>${nf.format(k26)} kVt·s</b><span class="sub muted">${nf.format(a26)} AZN</span></div>
  <div class="kpi"><small>Fərq (kVt·saat)</small><b class="${cl(k26-k25)}">${sg(k26-k25)}</b><span class="sub ${cl(k26-k25)}">${sp(pc(k26,k25))}</span></div>
- <div class="kpi"><small>Fərq (AZN, ƏDV daxil)</small><b class="${cl(a26-a25)}">${sg(a26-a25)}</b><span class="sub ${cl(a26-a25)}">${sp(pc(a26,a25))}</span></div>`;
+ <div class="kpi"><small>Fərq (AZN, ƏDV daxil)</small><b class="${cl(a26-a25)}">${sg(a26-a25)}</b><span class="sub ${cl(a26-a25)}">${sp(pc(a26,a25))}</span></div>
+ <div class="kpi"><small>Gündəlik orta (kVt·s/gün)</small><b>${nf.format(dd(2025))} → ${nf.format(dd(2026))}</b><span class="sub ${cl(dd(2026)-dd(2025))}">${sp(pc(dd(2026),dd(2025)))} (dövr uzunluğuna düzəliş)</span></div>`;
 
 // Qrafik
 let mode='kwh';
@@ -224,8 +259,8 @@ $('#cTbl').innerHTML=t;
 
 // Abunə kodları
 const ABN={'200-068':'04/200-068 (EATS-lər, əsas)','100-107':'04/100-107 (Tbilisi pr.)'};
-let ta='<table><tr><th>Abunə</th><th>2025, kVt·s</th><th>2026, kVt·s</th><th>Fərq, kVt·s</th><th>Fərq, %</th><th>2025, AZN</th><th>2026, AZN</th></tr>';
-AB.forEach(a=>{const x=sum(2025,'kwh',a),y=sum(2026,'kwh',a);ta+=`<tr><td>${ABN[a]}</td><td>${nf.format(x)}</td><td>${nf.format(y)}</td><td>${dl(y,x)}</td><td>${dp(y,x)}</td><td>${nf.format(sum(2025,'total',a))}</td><td>${nf.format(sum(2026,'total',a))}</td></tr>`});
+let ta='<table><tr><th>Abunə</th><th>2025, kVt·s</th><th>2026, kVt·s</th><th>Fərq, kVt·s</th><th>Fərq, %</th><th>Gündəlik, %</th><th>2025, AZN</th><th>2026, AZN</th></tr>';
+AB.forEach(a=>{const x=sum(2025,'kwh',a),y=sum(2026,'kwh',a);ta+=`<tr><td>${ABN[a]}</td><td>${nf.format(x)}</td><td>${nf.format(y)}</td><td>${dl(y,x)}</td><td>${dp(y,x)}</td><td>${dp(y/dy(2026,a),x/dy(2025,a))}</td><td>${nf.format(sum(2025,'total',a))}</td><td>${nf.format(sum(2026,'total',a))}</td></tr>`});
 $('#cAb').innerHTML=ta+'</table>';
 // 100-107 aylıq
 const m107=MS.map((m,i)=>[MN[i],g(2025,m,'kwh','100-107'),g(2026,m,'kwh','100-107')]);
@@ -234,11 +269,11 @@ const m107=MS.map((m,i)=>[MN[i],g(2025,m,'kwh','100-107'),g(2026,m,'kwh','100-10
 const ats={};
 ['2025','2026'].forEach(y=>MS.forEach(m=>AB.forEach(a=>{const v=D.inv[key(y,m)][a];if(!v)return;for(const [k,x] of Object.entries(v.ats)){(ats[k]=ats[k]||{2025:0,2026:0})[y]+=x}})));
 const NAMES={'107':'04/100-107 Tbilisi pr.','digər':'Digər / ayrılmayan'};
-const rows=Object.entries(ats).map(([k,v])=>({k,n:NAMES[k]||('ATS-'+k),a:v[2025],b:v[2026]})).filter(r=>Math.abs(r.a)+Math.abs(r.b)>1).sort((x,y)=>(y.b-y.a)-(x.b-x.a));
+const rows=Object.entries(ats).map(([k,v])=>({k,n:NAMES[k]||('ATS-'+k),a:v[2025],b:v[2026],da:v[2025]/(k==='107'?dy(2025,'100-107'):dy(2025,'200-068')),db:v[2026]/(k==='107'?dy(2026,'100-107'):dy(2026,'200-068'))})).filter(r=>Math.abs(r.a)+Math.abs(r.b)>1).sort((x,y)=>(y.b-y.a)-(x.b-x.a));
 const mx=Math.max(...rows.map(r=>Math.abs(r.b-r.a)));
-let te='<table><tr><th>EATS</th><th>2025</th><th>2026</th><th>Fərq</th><th>Fərq, %</th><th class="noprint"></th></tr>';
+let te='<table><tr><th>EATS</th><th>2025</th><th>2026</th><th>Fərq</th><th>Fərq, %</th><th>Gündəlik fərq, %</th><th class="noprint"></th></tr>';
 rows.forEach(r=>{const d=r.b-r.a,w=Math.abs(d)/mx*50,col=d>0?'var(--up)':'var(--down)';
-  te+=`<tr><td>${r.n}</td><td>${nf.format(r.a)}</td><td>${nf.format(r.b)}</td><td>${dl(r.b,r.a)}</td><td>${r.a>1000?dp(r.b,r.a):'—'}</td><td class="noprint"><div class="bar"><span style="${d>0?'left:50%':'right:50%'};width:${w}%;background:${col}"></span></div></td></tr>`});
+  te+=`<tr><td>${r.n}</td><td>${nf.format(r.a)}</td><td>${nf.format(r.b)}</td><td>${dl(r.b,r.a)}</td><td>${r.a>1000?dp(r.b,r.a):'—'}</td><td>${r.a>1000?dp(r.db,r.da):'—'}</td><td class="noprint"><div class="bar"><span style="${d>0?'left:50%':'right:50%'};width:${w}%;background:${col}"></span></div></td></tr>`});
 $('#cAts').innerHTML=te+'</table>';
 
 // Tarif
@@ -254,8 +289,10 @@ const worst=rows[0],best=rows[rows.length-1];
 const bestMonth=MS.map((m,i)=>[MN[i],pc(g(2026,m,'kwh'),g(2025,m,'kwh'))]).sort((x,y)=>x[1]-y[1]);
 const s107=sum(2025,'kwh','100-107'),t107=sum(2026,'kwh','100-107'),s68=sum(2025,'kwh','200-068'),t68=sum(2026,'kwh','200-068');
 const L=[];
-L.push(`2026-cı ilin iyun–oktyabr dövründə elektrik sərfiyyatı 2025-ci ilin eyni dövrü ilə müqayisədə <b class="${cl(k26-k25)}">${nf.format(Math.abs(k26-k25))} kVt·saat (${nf2.format(Math.abs(pc(k26,k25)))}%) ${k26<k25?'az':'çox'}</b> olub; bu, təxminən <b>${nf.format(Math.abs(a26-a25))} AZN</b> ${a26<a25?'qənaət':'əlavə xərc'} deməkdir (ƏDV daxil).`);
-L.push(`Ən çox azalma <b>${bestMonth[0][0]}</b> ayında (${sp(bestMonth[0][1])}), ən az azalma <b>${bestMonth[bestMonth.length-1][0]}</b> ayındadır (${sp(bestMonth[bestMonth.length-1][1])}). Hər ${MS.length} ayda sərfiyyat 2025-dən aşağıdır.`);
+L.push(`2026-cı ilin iyun–oktyabr dövründə elektrik sərfiyyatı 2025-ci ilin eyni dövrü ilə müqayisədə <b class="${cl(k26-k25)}">${nf.format(Math.abs(k26-k25))} kVt·saat (${nf2.format(Math.abs(pc(k26,k25)))}%) ${k26<k25?'az':'çox'}</b> olub; bu, fakturalanan məbləğ də <b>${nf.format(Math.abs(a26-a25))} AZN</b> ${a26<a25?'azdır':'çoxdur'} (ƏDV daxil). Amma hesab dövrləri eyni uzunluqda deyil, növbəti bəndə baxın.`);
+L.push(`<b>Dövr uzunluğu fərqi:</b> 04/200-068 fakturaları 2025-də cəmi ${dy(2025,'200-068')} gün, 2026-da ${dy(2026,'200-068')} gün əhatə edir; 04/100-107 üçün ${dy(2025,'100-107')} və ${dy(2026,'100-107')} gün. Gündəlik orta götürəndə ümumi sərfiyyat ${nf.format(dd(2025))} → ${nf.format(dd(2026))} kVt·s/gün (<b class="${cl(dd(2026)-dd(2025))}">${sp(pc(dd(2026),dd(2025)))}</b>); 04/200-068 üzrə ${sp(pc(sum(2026,'kwh','200-068')/dy(2026,'200-068'),sum(2025,'kwh','200-068')/dy(2025,'200-068')))}, 04/100-107 üzrə ${sp(pc(sum(2026,'kwh','100-107')/dy(2026,'100-107'),sum(2025,'kwh','100-107')/dy(2025,'100-107')))}. Yəni fakturalardakı cəm azalmanın böyük hissəsi qısa hesab dövrlərindən gəlir.`);
+L.push(`<b>Ortaq sayğaclar:</b> 2025 fakturalarında olan ${D.removed.length} sayğac (əsasən MTK alt-sayğacları, iyun–oktyabr üzrə ${nf.format(REM)} kVt·s) 2026 fakturalarında yoxdur. Yalnız hər iki ildə fakturalanan sayğacları götürsək, 04/200-068: ${nf.format(c25)} → ${nf.format(c26)} kVt·s (<b class="${cl(c26-c25)}">${sp(pc(c26,c25))}</b>), gündəlik orta ${nf.format(cd25)} → ${nf.format(cd26)} kVt·s/gün (<b class="${cl(cd26-cd25)}">${sp(pc(cd26,cd25))}</b>). Bu, ən ədalətli müqayisədir.`);
+L.push(`Ən çox azalma <b>${bestMonth[0][0]}</b> ayında (${sp(bestMonth[0][1])}), ən az azalma <b>${bestMonth[bestMonth.length-1][0]}</b> ayındadır (${sp(bestMonth[bestMonth.length-1][1])}). Faktura cəmi hər ${MS.length} ayda 2025-dən aşağıdır, amma bu, qısa hesab dövrlərindən də təsirlənir.`);
 L.push(`Əsas abunə (04/200-068) üzrə <b class="down">${sp(pc(t68,s68))}</b> (${sg(t68-s68)} kVt·s), Tbilisi pr. (04/100-107) üzrə isə <b class="${cl(t107-s107)}">${sp(pc(t107,s107))}</b> (${sg(t107-s107)} kVt·s). Tbilisi pr.-də artım avqust ayından (${nf.format(g(2025,8,'kwh','100-107'))} → ${nf.format(g(2026,8,'kwh','100-107'))} kVt·s) gəlir, səbəbi araşdırılmalıdır.`);
 const dn=rows.filter(r=>r.k!=='107'&&r.k!=='digər');const bd=[...dn].sort((x,y)=>(x.b-x.a)-(y.b-y.a))[0];
 L.push(`EATS-lər üzrə ən böyük azalma <b>${bd.n}</b> (${sg(bd.b-bd.a)} kVt·s, ${sp(pc(bd.b,bd.a))}). Artım göstərən EATS: ${dn.filter(r=>r.b>r.a).map(r=>`<b>${r.n}</b> (${sg(r.b-r.a)} kVt·s)`).join(', ')||'yoxdur'}.`);
@@ -265,7 +302,7 @@ $('#cSum').innerHTML=L.map(x=>`<li>${x}</li>`).join('');
 // Yoxlama (Excel)
 const fl=D.flags.filter(f=>MS.includes(+f.month.split('-')[1])),mon=m=>{const[y,mm]=m.split('-');return MN[+mm-6]+' '+y};
 $('#cFlags').innerHTML=(fl.length?fl.map(f=>`<div class="warn"><b>${mon(f.month)} · ${f.name}</b> — ${f.why}.</div>`).join(''):'<p class="muted">Problem tapılmadı.</p>')+
-  '<p class="note">Bu aylar aşağıdakı Excel müqayisəsindən çıxarılıb. Hesab-fakturalar (rəsmi məbləğlər) bu səhvlərdən təsirlənmir.</p>';
+  '<p class="note">Bu aylar aşağıdakı Excel müqayisəsindən çıxarılıb. Hesab-fakturalar (rəsmi məbləğlər) bu səhvlərdən təsirlənmir.</p>'+`<div class="warn"><b>2026 fakturalarında olmayan sayğaclar (${D.removed.length}):</b> ${D.removed.join(', ')}. Excel-də də bu sayğacların çoxu 2026-da 0 göstərir. Bunlara nə olduğunu (başqa abunəyə keçirilib, söndürülüb və s.) təsdiq etmək lazımdır.</div>`;
 
 // Excel sayğac fərqləri
 let tm='<table><tr><th>Sayğac</th><th>2025</th><th>2026</th><th>Fərq %</th><th>Ay</th></tr>';
@@ -276,6 +313,110 @@ $('#cMeters').innerHTML=tm+'</table>';
 
 window.__cmpChart=chart;
 chart();
+})();
+</script>
+
+<script>
+(function(){
+const D=window.PANEL_DATA; if(!D)return;
+const $=s=>document.querySelector(s), nf=new Intl.NumberFormat('az',{maximumFractionDigits:0}), nf2=new Intl.NumberFormat('az',{minimumFractionDigits:2,maximumFractionDigits:2});
+const MN=['İyun','İyul','Avqust','Sentyabr','Oktyabr'], MS=[6,7,8,9,10], AB=['200-068','100-107'];
+const key=(y,m)=>y+'-'+String(m).padStart(2,'0');
+const inv=(y,m,a)=>D.inv[key(y,m)][a];
+const days=(y,m,a)=>{const q=inv(y,m,a).period.split('–').map(x=>x.trim().split('.').reverse().join('-'));return Math.round((new Date(q[1])-new Date(q[0]))/864e5)};
+const sg=n=>(n>0?'+':n<0?'−':'')+nf.format(Math.abs(n));
+const pc=(a,b)=>b?(a-b)/b*100:0;
+const sp=n=>(n>0?'+':n<0?'−':'')+nf2.format(Math.abs(n))+'%';
+const cl=n=>n>0?'up':n<0?'down':'';
+const dl=(a,b)=>`<span class="${cl(a-b)}">${a>b?'▲':a<b?'▼':''} ${sg(a-b)}</span>`;
+const dp=(a,b)=>`<span class="${cl(a-b)}">${sp(pc(a,b))}</span>`;
+const NAMES={'107':'04/100-107 Tbilisi pr.','digər':'Digər / ayrılmayan'};
+const atsName=k=>NAMES[k]||('ATS-'+k);
+const tot=(y,m,f)=>AB.reduce((s,a)=>s+inv(y,m,a)[f],0);
+const idx=[...MS];
+let cur=0,timer=null;
+const N=MS.length+2; // giriş + 5 ay + yekun
+
+function bar(){
+  const labels=['Giriş',...MN,'Yekun'];
+  $('#stBar').innerHTML=labels.map((l,i)=>`<button data-i="${i}" class="${i===cur?'on':i<cur?'done':''}">${i>0&&i<=MS.length?i+'. ':''}${l}</button>`).join('');
+  $('#stBar').querySelectorAll('button').forEach(b=>b.onclick=()=>{stop();go(+b.dataset.i)});
+  $('#stProg').style.width=(cur/(N-1)*100)+'%';
+  $('#stPrev').disabled=cur===0;$('#stNext').disabled=cur===N-1;
+}
+function intro(){
+  return `<div class="card"><h2>Nəyi müqayisə edirik</h2>
+  <p class="story">1 saylı Rabitə Xidmətləri Mərkəzinin elektrik enerjisi sərfiyyatı: <b>iyun–oktyabr 2025</b> ilə <b>iyun–oktyabr 2026</b>. Mənbə: Azərişıq hesab-fakturaları (2 abunə kodu × 5 ay × 2 il = 20 faktura) və aylıq EATS sayğac cədvəlləri (10 Excel).</p>
+  <div class="kpis"><div class="kpi"><small>04/200-068</small><b>EATS-lər</b><span class="sub muted">ATS-401, 406, 430/431, 432/434, 491, 502, 538/539, 568/569, 581, 594/595</span></div>
+  <div class="kpi"><small>04/100-107</small><b>Tbilisi pr.</b><span class="sub muted">tək sayğac, əmsal 1500</span></div>
+  <div class="kpi"><small>Tarif</small><b>0,125 AZN/kVt·s</b><span class="sub muted">ƏDV daxil, 20 fakturanın hamısında eyni</span></div></div>
+  <div class="warn"><b>Vacib:</b> hesab dövrləri hər ay eyni uzunluqda deyil (məsələn, iyun 2026-da 04/200-068 üçün 21 gün, iyul 2026-da 36 gün). Buna görə hər addımda həm faktura cəmi, həm də <b>gündəlik orta</b> göstərilir. Ədalətli müqayisə gündəlik ortadır.</div>
+  <p class="note">Sonda “Növbəti” düyməsi ilə ayları ardıcıl izləyin və ya “Avtomatik nümayiş” düyməsini basın.</p></div>`;
+}
+function month(i){
+  const m=MS[i-1],mn=MN[i-1];
+  const a=tot(2025,m,'kwh'),b=tot(2026,m,'kwh'),x=tot(2025,m,'total'),y=tot(2026,m,'total');
+  const d5=days(2025,m,'200-068'),d6=days(2026,m,'200-068');
+  const g5=AB.reduce((s,k)=>s+inv(2025,m,k).kwh/days(2025,m,k),0),g6=AB.reduce((s,k)=>s+inv(2026,m,k).kwh/days(2026,m,k),0);
+  // ATS
+  const keys=[...new Set(AB.flatMap(k=>[...Object.keys(inv(2025,m,k).ats),...Object.keys(inv(2026,m,k).ats)]))];
+  const val=(y,k)=>AB.reduce((s,ab)=>s+(inv(y,m,ab).ats[k]||0),0);
+  const rows=keys.map(k=>{const dd5=k==='107'?days(2025,m,'100-107'):d5,dd6=k==='107'?days(2026,m,'100-107'):d6;return{k,a:val(2025,k),b:val(2026,k),ga:val(2025,k)/dd5,gb:val(2026,k)/dd6}}).filter(r=>Math.abs(r.a)+Math.abs(r.b)>200).sort((p,q)=>(q.b-q.a)-(p.b-p.a));
+  const gr=[...rows].filter(r=>r.k!=='digər').sort((p,q)=>(p.gb-p.ga)-(q.gb-q.ga));
+  const story=`<p class="story"><b>${mn} ${tot(2025,m,'kwh')>tot(2026,m,'kwh')?'ayında sərfiyyat 2025-dən aşağıdır':'ayında sərfiyyat 2025-dən yüksəkdir'}.</b> Faktura cəmi: 2025-də ${nf.format(a)} kVt·s, 2026-da ${nf.format(b)} kVt·s (<span class="${cl(b-a)}">${sp(pc(b,a))}</span>). Hesab dövrü 04/200-068 üçün ${d5} gün (2025) və ${d6} gün (2026) olduğundan, gündəlik orta götürəndə: ${nf.format(g5)} → ${nf.format(g6)} kVt·s/gün (<span class="${cl(g6-g5)}">${sp(pc(g6,g5))}</span>). `+
+   (gr.length?`EATS-lər üzrə gündəlik ən çox azalan <b>${atsName(gr[0].k)}</b> (${sp(pc(gr[0].gb,gr[0].ga))}), ən çox artan <b>${atsName(gr[gr.length-1].k)}</b> (${sp(pc(gr[gr.length-1].gb,gr[gr.length-1].ga))}).`:'')+`</p>`;
+  const card=(yr,o)=>`<div class="yr"><h3>${mn} ${yr}</h3><b class="v">${nf.format(o.k)} kVt·s</b><small>${nf.format(o.a)} AZN · ${nf.format(o.g)} kVt·s/gün</small></div>`;
+  const c5={k:a,a:x,g:g5},c6={k:b,a:y,g:g6};
+  let ab='<table><tr><th>Abunə</th><th>Dövr 2025</th><th>Gün</th><th>kVt·s</th><th>kVt·s/gün</th><th>Dövr 2026</th><th>Gün</th><th>kVt·s</th><th>kVt·s/gün</th><th>Gündəlik fərq</th></tr>';
+  AB.forEach(k=>{const p=inv(2025,m,k),q=inv(2026,m,k),n5=days(2025,m,k),n6=days(2026,m,k);
+    ab+=`<tr><td>${k==='200-068'?'04/200-068':'04/100-107'}</td><td>${p.period}</td><td>${n5}</td><td>${nf.format(p.kwh)}</td><td>${nf.format(p.kwh/n5)}</td><td>${q.period}</td><td>${n6}</td><td>${nf.format(q.kwh)}</td><td>${nf.format(q.kwh/n6)}</td><td>${dp(q.kwh/n6,p.kwh/n5)}</td></tr>`});
+  ab+='</table>';
+  let at='<table><tr><th>EATS</th><th>2025, kVt·s</th><th>2026, kVt·s</th><th>Fərq</th><th>Fərq, %</th><th>Gündəlik fərq, %</th></tr>';
+  rows.forEach(r=>at+=`<tr><td>${atsName(r.k)}</td><td>${nf.format(r.a)}</td><td>${nf.format(r.b)}</td><td>${dl(r.b,r.a)}</td><td>${r.a>500?dp(r.b,r.a):'—'}</td><td>${r.a>500?dp(r.gb,r.ga):'—'}</td></tr>`);
+  at+='</table>';
+  // Excel sayğaclar
+  const mi=m-5;let ex=D.meters.map(t=>({n:t.name,a:t.y25[mi],b:t.y26[mi]})).filter(t=>t.a!=null&&t.b!=null&&(t.a>0||t.b>0)).sort((p,q)=>Math.abs(q.b-q.a)-Math.abs(p.b-p.a)).slice(0,8);
+  let et='<table><tr><th>Sayğac (Excel)</th><th>2025</th><th>2026</th><th>Fərq</th></tr>'+ex.map(t=>`<tr><td>${t.n}</td><td>${nf.format(t.a)}</td><td>${nf.format(t.b)}</td><td>${dl(t.b,t.a)}</td></tr>`).join('')+'</table>';
+  // yığım
+  let c25=0,c26=0,cd5=0,cd6=0,cn5=0,cn6=0;
+  for(let j=0;j<i;j++){const mm=MS[j];c25+=tot(2025,mm,'kwh');c26+=tot(2026,mm,'kwh');}
+  return `<div class="card"><h2>Addım ${i} / ${MS.length}: ${mn} ayı</h2>${story}
+   <div class="two">${card(2025,c5)}${card(2026,c6)}</div>
+   <p style="margin:12px 0 0">Fərq: <b>${dl(b,a)} kVt·s</b> (${dp(b,a)}) · <b>${dl(y,x)} AZN</b> · gündəlik <b>${dp(g6,g5)}</b></p></div>
+  <div class="card"><h2>Abunə kodları üzrə (hesab dövrü ilə)</h2><div class="tbl">${ab}</div></div>
+  <div class="card"><h2>EATS üzrə, ${mn.toLowerCase()} ayı</h2><div class="tbl">${at}</div><p class="note">Bölgü hesab-fakturadakı uçot nöqtələrinə əsasdır. “Gündəlik fərq” hesab dövrünün gün sayına bölünmüş sərfiyyatın fərqidir.</p></div>
+  <div class="card"><h2>EATS sayğac göstəriciləri (Excel), ən çox fərqlənən 8</h2><div class="tbl">${et}</div><p class="note">Excel-dəki xam göstərici fərqidir (əmsalsız, fider sayğaclarına alt-sayğaclar daxildir), buna görə kVt·s rəqəmləri fakturadan fərqlənir. Meyl müqayisəsi üçündür.</p></div>
+  <div class="card"><h2>${mn} ayına qədər yığım (iyun–${mn.toLowerCase()})</h2><p class="story" style="margin:0">2025: <b>${nf.format(c25)}</b> kVt·s · 2026: <b>${nf.format(c26)}</b> kVt·s · fərq <b class="${cl(c26-c25)}">${sg(c26-c25)} (${sp(pc(c26,c25))})</b></p></div>`;
+}
+function fin(){
+  const rowsT=MS.map((m,j)=>{const a=tot(2025,m,'kwh'),b=tot(2026,m,'kwh');const g5=AB.reduce((s,k)=>s+inv(2025,m,k).kwh/days(2025,m,k),0),g6=AB.reduce((s,k)=>s+inv(2026,m,k).kwh/days(2026,m,k),0);return{mn:MN[j],a,b,g5,g6,x:tot(2025,m,'total'),y:tot(2026,m,'total')}});
+  const A=rowsT.reduce((s,r)=>s+r.a,0),B=rowsT.reduce((s,r)=>s+r.b,0),X=rowsT.reduce((s,r)=>s+r.x,0),Y=rowsT.reduce((s,r)=>s+r.y,0);
+  const dday=y=>AB.reduce((s,k)=>s+MS.reduce((q,m)=>q+inv(y,m,k).kwh,0)/MS.reduce((q,m)=>q+days(y,m,k),0),0);
+  const G5=dday(2025),G6=dday(2026);
+  const dday68=y=>MS.reduce((q,m)=>q+days(y,m,'200-068'),0);
+  const REMT=MS.reduce((s,m)=>s+(inv(2025,m,'200-068').rem||0),0);
+  const C5=MS.reduce((s,m)=>s+inv(2025,m,'200-068').kwh,0)-REMT,C6=MS.reduce((s,m)=>s+inv(2026,m,'200-068').kwh,0);
+  let t='<table><tr><th>Ay</th><th>2025, kVt·s</th><th>2026, kVt·s</th><th>Fərq, %</th><th>Gündəlik 2025</th><th>Gündəlik 2026</th><th>Gündəlik fərq, %</th></tr>'+
+   rowsT.map(r=>`<tr><td>${r.mn}</td><td>${nf.format(r.a)}</td><td>${nf.format(r.b)}</td><td>${dp(r.b,r.a)}</td><td>${nf.format(r.g5)}</td><td>${nf.format(r.g6)}</td><td>${dp(r.g6,r.g5)}</td></tr>`).join('')+
+   `<tr class="tot"><td>Cəmi / orta</td><td>${nf.format(A)}</td><td>${nf.format(B)}</td><td>${dp(B,A)}</td><td>${nf.format(G5)}</td><td>${nf.format(G6)}</td><td>${dp(G6,G5)}</td></tr></table>`;
+  return `<div class="card"><h2>Yekun</h2>
+  <div class="kpis"><div class="kpi"><small>Faktura cəmi, kVt·s</small><b class="${cl(B-A)}">${sg(B-A)}</b><span class="sub ${cl(B-A)}">${sp(pc(B,A))}</span></div>
+  <div class="kpi"><small>Faktura məbləği, AZN</small><b class="${cl(Y-X)}">${sg(Y-X)}</b><span class="sub ${cl(Y-X)}">${sp(pc(Y,X))}</span></div>
+  <div class="kpi"><small>Gündəlik orta, kVt·s/gün</small><b>${nf.format(G5)} → ${nf.format(G6)}</b><span class="sub ${cl(G6-G5)}">${sp(pc(G6,G5))}</span></div></div>
+  <div class="tbl">${t}</div>
+  <p class="story" style="margin-top:12px">Fakturalanan cəmdə ${sp(pc(B,A))} azalma görünür, amma 2026 fakturaları daha qısa dövrü əhatə edir. Gündəlik orta götürəndə sərfiyyat demək olar ki, eynidir (${sp(pc(G6,G5))}). Ayrı-ayrı aylarda gündəlik göstərici dövr sərhədlərinin sürüşməsi səbəbilə xeyli dəyişir (məsələn iyun +21%, iyul −14%), ona görə ən etibarlı müqayisə 5 ayın cəmidir. Abunələr fərqli istiqamətdə gedir: əsas abunədə (04/200-068) azalma, Tbilisi pr.-də (04/100-107) artım.</p>
+  <h2 style="margin-top:16px">Ədalətli müqayisə: yalnız ortaq sayğaclar</h2>
+  <p class="story">2025 fakturalarında olan ${D.removed.length} sayğac (${D.removed.join(', ')}) 2026 fakturalarında yoxdur; iyun–oktyabr 2025-də onların sərfiyyatı ${nf.format(REMT)} kVt·s olub. Bunları çıxsaq, 04/200-068: <b>${nf.format(C5)} → ${nf.format(C6)} kVt·s</b> (<span class="${cl(C6-C5)}">${sp(pc(C6,C5))}</span>), gündəlik orta <b>${nf.format(C5/dday68(2025))} → ${nf.format(C6/dday68(2026))} kVt·s/gün</b> (<span class="${cl(C6/dday68(2026)-C5/dday68(2025))}">${sp(pc(C6/dday68(2026),C5/dday68(2025)))}</span>).</p>
+  <div class="warn">Yoxlanmalı: iyun 2026 fakturasında 04/200-068 hesab dövrü 19.05.2026-da başlayır, halbuki may fakturası 13.05.2026-da bitir (6 günlük boşluq).</div></div>`;
+}
+function render(){bar();$('#stBody').innerHTML=cur===0?intro():cur===N-1?fin():month(cur);}
+function go(i){cur=Math.max(0,Math.min(N-1,i));render();scrollTo({top:document.querySelector('#steps').offsetTop-10,behavior:'smooth'})}
+function stop(){if(timer){clearInterval(timer);timer=null;$('#stAuto').textContent='▶ Avtomatik nümayiş'}}
+$('#stPrev').onclick=()=>{stop();go(cur-1)};
+$('#stNext').onclick=()=>{stop();go(cur+1)};
+$('#stAuto').onclick=()=>{if(timer){stop();return}$('#stAuto').textContent='❚❚ Dayandır';if(cur===N-1)go(0);timer=setInterval(()=>{if(cur>=N-1){stop();return}go(cur+1)},8000)};
+addEventListener('keydown',e=>{if($('#steps').classList.contains('hidden'))return;if(e.key==='ArrowRight'){stop();go(cur+1)}if(e.key==='ArrowLeft'){stop();go(cur-1)}});
+render();
 })();
 </script>
 <script>

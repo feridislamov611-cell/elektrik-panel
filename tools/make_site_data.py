@@ -11,7 +11,7 @@ for k, v in d["invoices"].items():
         gap = round(i["kwh"] - sum(ats.values()), 2)
         if abs(gap) >= 1:
             ats["digər"] = round(ats.get("digər", 0) + gap, 2)
-        inv[k][ab] = dict(kwh=i["kwh"], net=i["net"], vat=i["vat"], total=i["total"], ats=ats, file=i["file"])
+        inv[k][ab] = dict(rem=i.get("removed_kwh", 0), period=i.get("period"), kwh=i["kwh"], net=i["net"], vat=i["vat"], total=i["total"], ats=ats, file=i["file"])
 
 # Excel: xam sayğac fərqləri; səhv göstəricili aylar null olur
 bad = set()
@@ -32,6 +32,7 @@ out = dict(
                  y25=[m["d"].get(f"2025-{x:02d}") for x in MONTHS],
                  y26=[m["d"].get(f"2026-{x:02d}") for x in MONTHS]) for s, m in meters.items()],
     flags=d["flags"],
+    removed=d.get("removed_names", []),
 )
 open(sys.argv[2], "w").write("window.PANEL_DATA=" + json.dumps(out, ensure_ascii=False, separators=(",", ":")) + ";\n")
 print("ok", len(open(sys.argv[2]).read()) // 1024, "KB")
