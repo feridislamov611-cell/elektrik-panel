@@ -47,6 +47,28 @@ th{color:var(--muted);font-weight:600;font-size:13px}
 .x{background:none;border:0;color:var(--muted);cursor:pointer}
 canvas{width:100%;height:220px}
 .hidden{display:none}
+
+.hero{background:linear-gradient(135deg,#0b2a55,#0b5cab);color:#fff;border-radius:12px;padding:18px 20px;margin-bottom:16px}
+.hero h2{margin:0 0 4px;font-size:19px;color:#fff}.hero p{margin:0;opacity:.85;font-size:13px}
+.kpis.big .kpi b{font-size:22px}.kpi .sub{display:block;font-size:12px;margin-top:2px}
+.sum{margin:0;padding-left:20px}.sum li{margin:6px 0}
+.legend{display:flex;gap:16px;font-size:13px;color:var(--muted);margin-bottom:6px;flex-wrap:wrap}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.bar{height:8px;border-radius:4px;background:var(--line);position:relative;min-width:90px}
+.bar span{position:absolute;top:0;bottom:0;border-radius:4px}
+.note{font-size:12px;color:var(--muted);margin:8px 0 0}
+.warn{border-left:3px solid #d97706;padding:6px 10px;margin:6px 0;background:rgba(217,119,6,.08);border-radius:4px;font-size:13px}
+.cmpcanvas{width:100%;height:280px}
+.tabs2{display:flex;gap:6px;margin-bottom:10px}
+.tabs2 button{font:inherit;padding:5px 12px;border:1px solid var(--line);border-radius:16px;background:none;color:var(--muted);cursor:pointer}
+.tabs2 button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.tot td{font-weight:700;border-top:2px solid var(--line)}
+@media print{
+  .top .in{padding:6px 0}nav,#tabs,.noprint,footer .x,.tabs2{display:none!important}
+  body{background:#fff;color:#000;font-size:12px}main{padding:0}.card,.kpi{break-inside:avoid;border-color:#ccc}
+  main.hidden{display:none!important}#cmp.hidden{display:block!important}#elec,#tel{display:none!important}
+  .hero{background:#0b2a55!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
 </style>
 </head>
 <body>
@@ -58,23 +80,50 @@ canvas{width:100%;height:220px}
   </div>
   <div class="ttl">
     <h1>Hesabat paneli</h1>
-    <p>Aylıq Excel faylları əsasında müqayisə. Məlumat yalnız bu brauzerdə saxlanılır.</p>
+    <p>Hesab-fakturalar və EATS sayğac göstəriciləri əsasında müqayisə. Məlumat heç bir serverə göndərilmir.</p>
   </div>
 </div></div>
 <header>
   <nav id="tabs">
-    <button class="on" data-t="elec">1. Elektrik sərfiyyatı</button>
+    <button class="on" data-t="cmp">1. Elektrik: 2025–2026 müqayisəsi</button>
+    <button data-t="elec">Aylıq Excel əlavə et</button>
     <button data-t="tel">2. Aztelekom</button>
   </nav>
 </header>
 
-<main id="elec">
+<main id="cmp">
+  <div class="hero">
+    <h2>Elektrik enerjisi sərfiyyatı: may–oktyabr 2025 və 2026</h2>
+    <p>1 saylı Rabitə Xidmətləri Mərkəzi · abunə kodları 04/200-068 və 04/100-107 · mənbə: Azərişıq hesab-fakturaları</p>
+  </div>
+  <div class="kpis big" id="cKpis"></div>
+  <div class="card"><h2>Əsas nəticələr</h2><ul class="sum" id="cSum"></ul></div>
+  <div class="card">
+    <h2>Aylar üzrə müqayisə</h2>
+    <div class="tabs2 noprint"><button class="on" data-m="kwh">Sərfiyyat, kVt·saat</button><button data-m="azn">Məbləğ, AZN (ƏDV daxil)</button></div>
+    <div class="legend"><span><i style="background:#9aa7bd"></i>2025</span><span><i style="background:var(--accent)"></i>2026</span></div>
+    <canvas id="cChart" class="cmpcanvas"></canvas>
+  </div>
+  <div class="card"><h2>Ay-ay cədvəl (cəmi)</h2><div class="tbl" id="cTbl"></div>
+    <p class="note">Hesab-faktura dövrləri ayın ortasından ayın ortasına qədərdir (məs. 13.04–13.05), mənbə sənəddəki kimi götürülüb.</p></div>
+  <div class="card"><h2>Abunə kodları üzrə</h2><div class="tbl" id="cAb"></div></div>
+  <div class="card"><h2>EATS (ATS) üzrə sərfiyyat, kVt·saat</h2><div class="tbl" id="cAts"></div>
+    <p class="note">Bölgü hesab-fakturadakı uçot nöqtələrinə əsasdır. Fider sayğaclarından çıxılan alt-sayğaclar (otel, BBTV və s.) fakturada artıq nəzərə alınıb. 100-107 abunəsi tək sayğacdır (Tbilisi pr.).</p></div>
+  <div class="card"><h2>Tarif təhlili</h2><div class="tbl" id="cTar"></div><p class="note" id="cTarNote"></p></div>
+  <div class="card"><h2>Sayğac göstəricilərinin yoxlanması (Excel)</h2><div id="cFlags"></div></div>
+  <div class="card"><h2>Excel sayğac fərqləri (xam, əmsalsız)</h2>
+    <p class="note" style="margin:0 0 8px">Hər sayğacın may–oktyabr üzrə göstərici fərqinin cəmi. Səhv göstəricili aylar hər iki ildən çıxarılıb (cüt müqayisə).</p>
+    <div class="tbl" id="cMeters"></div></div>
+  <div class="row noprint"><button class="btn" onclick="print()">Çap et / PDF</button></div>
+</main>
+
+<main id="elec" class="hidden">
   <div class="card">
     <h2>Aylıq Excel əlavə et</h2>
     <div class="row">
       <label>Excel faylı<input type="file" id="file" accept=".xlsx,.xls,.csv"></label>
       <label>Ay<input type="month" id="month"></label>
-      <label>Tarif (AZN / kVt·saat)<input type="number" id="tariff" step="0.001" min="0" value="0.15"></label>
+      <label>Tarif (AZN / kVt·saat)<input type="number" id="tariff" step="0.001" min="0" value="0.125"></label>
     </div>
     <div id="map" class="hidden" style="margin-top:12px">
       <div class="row">
@@ -118,6 +167,117 @@ canvas{width:100%;height:220px}
 </main>
 
 <footer>Bu daxili hesabat paneli rəsmi şirkət səhifəsi deyil. Loqolar yalnız məlumat məqsədilə göstərilir və müvafiq şirkətlərə məxsusdur.</footer>
+
+<script src="assets/data.js"></script>
+<script>
+(function(){
+const D=window.PANEL_DATA; if(!D)return;
+const $=s=>document.querySelector(s), nf=new Intl.NumberFormat('az',{maximumFractionDigits:0}), nf2=new Intl.NumberFormat('az',{minimumFractionDigits:2,maximumFractionDigits:2}), nf3=new Intl.NumberFormat('az',{minimumFractionDigits:3,maximumFractionDigits:3});
+const MN=['May','İyun','İyul','Avqust','Sentyabr','Oktyabr'], MS=[5,6,7,8,9,10], AB=['200-068','100-107'];
+const key=(y,m)=>y+'-'+String(m).padStart(2,'0');
+const g=(y,m,f,ab)=>{const v=D.inv[key(y,m)];return (ab?[ab]:AB).reduce((s,a)=>s+(v[a]?v[a][f]:0),0)};
+const sum=(y,f,ab)=>MS.reduce((s,m)=>s+g(y,m,f,ab),0);
+const pc=(a,b)=>b?(a-b)/b*100:0;
+const sg=n=>(n>0?'+':n<0?'−':'')+nf.format(Math.abs(n));
+const sp=n=>(n>0?'+':n<0?'−':'')+nf2.format(Math.abs(n))+'%';
+const cl=n=>n>0?'up':n<0?'down':'';
+const dl=(a,b,f=sg)=>`<span class="${cl(a-b)}">${a>b?'▲':a<b?'▼':''} ${f(a-b)}</span>`;
+const dp=(a,b)=>`<span class="${cl(a-b)}">${sp(pc(a,b))}</span>`;
+
+const k25=sum(2025,'kwh'),k26=sum(2026,'kwh'),a25=sum(2025,'total'),a26=sum(2026,'total');
+$('#cKpis').innerHTML=`
+ <div class="kpi"><small>Sərfiyyat 2025 (may–oktyabr)</small><b>${nf.format(k25)} kVt·s</b><span class="sub muted">${nf.format(a25)} AZN</span></div>
+ <div class="kpi"><small>Sərfiyyat 2026 (may–oktyabr)</small><b>${nf.format(k26)} kVt·s</b><span class="sub muted">${nf.format(a26)} AZN</span></div>
+ <div class="kpi"><small>Fərq (kVt·saat)</small><b class="${cl(k26-k25)}">${sg(k26-k25)}</b><span class="sub ${cl(k26-k25)}">${sp(pc(k26,k25))}</span></div>
+ <div class="kpi"><small>Fərq (AZN, ƏDV daxil)</small><b class="${cl(a26-a25)}">${sg(a26-a25)}</b><span class="sub ${cl(a26-a25)}">${sp(pc(a26,a25))}</span></div>`;
+
+// Qrafik
+let mode='kwh';
+function chart(){
+  const cv=$('#cChart'),dpr=devicePixelRatio||1,W=cv.clientWidth,H=cv.clientHeight;if(!W)return;
+  cv.width=W*dpr;cv.height=H*dpr;const c=cv.getContext('2d');c.scale(dpr,dpr);
+  const css=getComputedStyle(document.body),acc=css.getPropertyValue('--accent').trim(),mut=css.getPropertyValue('--muted').trim(),line=css.getPropertyValue('--line').trim();
+  const f=mode==='kwh'?'kwh':'total';
+  const A=MS.map(m=>g(2025,m,f)),B=MS.map(m=>g(2026,m,f)),max=Math.max(...A,...B)*1.12,pt=22,pb=44,pl=8,pr=8;
+  c.strokeStyle=line;c.fillStyle=mut;c.font='11px system-ui';c.textAlign='center';
+  for(let i=0;i<=4;i++){const y=pt+(H-pt-pb)*i/4;c.beginPath();c.moveTo(pl,y);c.lineTo(W-pr,y);c.stroke()}
+  const gw=(W-pl-pr)/6,bw=Math.min(34,gw*.32);
+  MS.forEach((m,i)=>{
+    const cx=pl+gw*(i+.5);
+    [[A[i],'#9aa7bd',-bw/2-1],[B[i],acc,bw/2+1]].forEach(([v,col,dx])=>{
+      const h=(H-pt-pb)*v/max;c.fillStyle=col;c.fillRect(cx+dx-bw/2,H-pb-h,bw,h);
+      c.fillStyle=mut;c.font='10px system-ui';c.fillText(nf.format(v),cx+dx,H-pb-h-4);
+    });
+    c.fillStyle=mut;c.font='12px system-ui';c.fillText(MN[i],cx,H-pb+16);
+    const p=pc(B[i],A[i]);c.fillStyle=p<0?'#1e8e5a':'#c0392b';c.font='bold 11px system-ui';c.fillText(sp(p),cx,H-pb+32);
+  });
+}
+document.querySelectorAll('.tabs2 button').forEach(b=>b.onclick=()=>{mode=b.dataset.m;document.querySelectorAll('.tabs2 button').forEach(x=>x.classList.toggle('on',x===b));chart()});
+addEventListener('resize',chart);
+
+// Ay-ay cədvəl
+let t=`<table><tr><th>Ay</th><th>2025, kVt·s</th><th>2026, kVt·s</th><th>Fərq, kVt·s</th><th>Fərq, %</th><th>2025, AZN</th><th>2026, AZN</th><th>Fərq, AZN</th></tr>`;
+MS.forEach((m,i)=>{const a=g(2025,m,'kwh'),b=g(2026,m,'kwh'),x=g(2025,m,'total'),y=g(2026,m,'total');
+  t+=`<tr><td>${MN[i]}</td><td>${nf.format(a)}</td><td>${nf.format(b)}</td><td>${dl(b,a)}</td><td>${dp(b,a)}</td><td>${nf.format(x)}</td><td>${nf.format(y)}</td><td>${dl(y,x)}</td></tr>`});
+t+=`<tr class="tot"><td>Cəmi</td><td>${nf.format(k25)}</td><td>${nf.format(k26)}</td><td>${dl(k26,k25)}</td><td>${dp(k26,k25)}</td><td>${nf.format(a25)}</td><td>${nf.format(a26)}</td><td>${dl(a26,a25)}</td></tr></table>`;
+$('#cTbl').innerHTML=t;
+
+// Abunə kodları
+const ABN={'200-068':'04/200-068 (EATS-lər, əsas)','100-107':'04/100-107 (Tbilisi pr.)'};
+let ta='<table><tr><th>Abunə</th><th>2025, kVt·s</th><th>2026, kVt·s</th><th>Fərq, kVt·s</th><th>Fərq, %</th><th>2025, AZN</th><th>2026, AZN</th></tr>';
+AB.forEach(a=>{const x=sum(2025,'kwh',a),y=sum(2026,'kwh',a);ta+=`<tr><td>${ABN[a]}</td><td>${nf.format(x)}</td><td>${nf.format(y)}</td><td>${dl(y,x)}</td><td>${dp(y,x)}</td><td>${nf.format(sum(2025,'total',a))}</td><td>${nf.format(sum(2026,'total',a))}</td></tr>`});
+$('#cAb').innerHTML=ta+'</table>';
+// 100-107 aylıq
+const m107=MS.map((m,i)=>[MN[i],g(2025,m,'kwh','100-107'),g(2026,m,'kwh','100-107')]);
+
+// EATS üzrə
+const ats={};
+['2025','2026'].forEach(y=>MS.forEach(m=>AB.forEach(a=>{const v=D.inv[key(y,m)][a];if(!v)return;for(const [k,x] of Object.entries(v.ats)){(ats[k]=ats[k]||{2025:0,2026:0})[y]+=x}})));
+const NAMES={'107':'04/100-107 Tbilisi pr.','digər':'Digər / ayrılmayan'};
+const rows=Object.entries(ats).map(([k,v])=>({k,n:NAMES[k]||('ATS-'+k),a:v[2025],b:v[2026]})).filter(r=>Math.abs(r.a)+Math.abs(r.b)>1).sort((x,y)=>(y.b-y.a)-(x.b-x.a));
+const mx=Math.max(...rows.map(r=>Math.abs(r.b-r.a)));
+let te='<table><tr><th>EATS</th><th>2025</th><th>2026</th><th>Fərq</th><th>Fərq, %</th><th class="noprint"></th></tr>';
+rows.forEach(r=>{const d=r.b-r.a,w=Math.abs(d)/mx*50,col=d>0?'var(--up)':'var(--down)';
+  te+=`<tr><td>${r.n}</td><td>${nf.format(r.a)}</td><td>${nf.format(r.b)}</td><td>${dl(r.b,r.a)}</td><td>${r.a>1000?dp(r.b,r.a):'—'}</td><td class="noprint"><div class="bar"><span style="${d>0?'left:50%':'right:50%'};width:${w}%;background:${col}"></span></div></td></tr>`});
+$('#cAts').innerHTML=te+'</table>';
+
+// Tarif
+const rate=(y,m)=>g(y,m,'total')/g(y,m,'kwh');
+let tt='<table><tr><th>Ay</th><th>2025, AZN/kVt·s</th><th>2026, AZN/kVt·s</th></tr>';
+MS.forEach((m,i)=>tt+=`<tr><td>${MN[i]}</td><td>${nf3.format(rate(2025,m))}</td><td>${nf3.format(rate(2026,m))}</td></tr>`);
+$('#cTar').innerHTML=tt+'</table>';
+const rates=[...MS.map(m=>rate(2025,m)),...MS.map(m=>rate(2026,m))],rmin=Math.min(...rates),rmax=Math.max(...rates);
+$('#cTarNote').textContent=(rmax-rmin<0.0006)?`Orta qiymət bütün 12 ayda eynidir (${nf3.format(rmax)} AZN/kVt·s, ƏDV daxil; ƏDV-siz ${nf3.format(rmax/1.18)}). Deməli məbləğdəki dəyişiklik yalnız sərfiyyatdan qaynaqlanır, tarif təsiri yoxdur.`:`Orta qiymət ${nf3.format(rmin)}–${nf3.format(rmax)} AZN/kVt·s arasında dəyişib.`;
+
+// Yekunlar
+const worst=rows[0],best=rows[rows.length-1];
+const bestMonth=MS.map((m,i)=>[MN[i],pc(g(2026,m,'kwh'),g(2025,m,'kwh'))]).sort((x,y)=>x[1]-y[1]);
+const s107=sum(2025,'kwh','100-107'),t107=sum(2026,'kwh','100-107'),s68=sum(2025,'kwh','200-068'),t68=sum(2026,'kwh','200-068');
+const L=[];
+L.push(`2026-cı ilin may–oktyabr dövründə elektrik sərfiyyatı 2025-ci ilin eyni dövrü ilə müqayisədə <b class="${cl(k26-k25)}">${nf.format(Math.abs(k26-k25))} kVt·saat (${nf2.format(Math.abs(pc(k26,k25)))}%) ${k26<k25?'az':'çox'}</b> olub; bu, təxminən <b>${nf.format(Math.abs(a26-a25))} AZN</b> ${a26<a25?'qənaət':'əlavə xərc'} deməkdir (ƏDV daxil).`);
+L.push(`Ən çox azalma <b>${bestMonth[0][0]}</b> ayında (${sp(bestMonth[0][1])}), ən az azalma <b>${bestMonth[5][0]}</b> ayındadır (${sp(bestMonth[5][1])}). Hər 6 ayda sərfiyyat 2025-dən aşağıdır.`);
+L.push(`Əsas abunə (04/200-068) üzrə <b class="down">${sp(pc(t68,s68))}</b> (${sg(t68-s68)} kVt·s), Tbilisi pr. (04/100-107) üzrə isə <b class="${cl(t107-s107)}">${sp(pc(t107,s107))}</b> (${sg(t107-s107)} kVt·s). Tbilisi pr.-də artım avqust ayından (${nf.format(g(2025,8,'kwh','100-107'))} → ${nf.format(g(2026,8,'kwh','100-107'))} kVt·s) gəlir, səbəbi araşdırılmalıdır.`);
+const dn=rows.filter(r=>r.k!=='107'&&r.k!=='digər');const bd=[...dn].sort((x,y)=>(x.b-x.a)-(y.b-y.a))[0];
+L.push(`EATS-lər üzrə ən böyük azalma <b>${bd.n}</b> (${sg(bd.b-bd.a)} kVt·s, ${sp(pc(bd.b,bd.a))}). Artım göstərən EATS: ${dn.filter(r=>r.b>r.a).map(r=>`<b>${r.n}</b> (${sg(r.b-r.a)} kVt·s)`).join(', ')||'yoxdur'}.`);
+if(bd.k==='568/569')L.push(`ATS-568/569-dakı böyük azalma (${sp(pc(bd.b,bd.a))}) real qənaət ola bilər, amma sayğac, əmsal və ya faktura düzəlişləri ilə bağlı olub-olmadığı yoxlanılmalıdır.`);
+$('#cSum').innerHTML=L.map(x=>`<li>${x}</li>`).join('');
+
+// Yoxlama (Excel)
+const fl=D.flags,mon=m=>{const[y,mm]=m.split('-');return MN[+mm-5]+' '+y};
+$('#cFlags').innerHTML=(fl.length?fl.map(f=>`<div class="warn"><b>${mon(f.month)} · ${f.name}</b> — ${f.why}.</div>`).join(''):'<p class="muted">Problem tapılmadı.</p>')+
+  '<p class="note">Bu aylar aşağıdakı Excel müqayisəsindən çıxarılıb. Hesab-fakturalar (rəsmi məbləğlər) bu səhvlərdən təsirlənmir.</p>';
+
+// Excel sayğac fərqləri
+let tm='<table><tr><th>Sayğac</th><th>2025</th><th>2026</th><th>Fərq %</th><th>Ay</th></tr>';
+D.meters.map(m=>{let a=0,b=0,n=0;m.y25.forEach((x,i)=>{const y=m.y26[i];if(x!=null&&y!=null){a+=x;b+=y;n++}});return{m,a,b,n}})
+ .filter(r=>r.a+r.b>0).sort((x,y)=>Math.abs(y.b-y.a)-Math.abs(x.b-x.a))
+ .forEach(r=>tm+=`<tr><td>${r.m.name}</td><td>${nf.format(r.a)}</td><td>${nf.format(r.b)}</td><td>${r.a>0?dp(r.b,r.a):'—'}</td><td>${r.n}/6</td></tr>`);
+$('#cMeters').innerHTML=tm+'</table>';
+
+window.__cmpChart=chart;
+chart();
+})();
+</script>
 <script>
 const KEY='elec-data-v1';
 let data=load(), pending=null;
@@ -226,6 +386,7 @@ document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x===b));
   document.querySelectorAll('main').forEach(m=>m.classList.toggle('hidden',m.id!==b.dataset.t));
   if(b.dataset.t==='elec'&&data.length)chart();
+  if(b.dataset.t==='cmp'&&window.__cmpChart)window.__cmpChart();
 });
 render();
 </script>
